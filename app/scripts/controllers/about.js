@@ -7,11 +7,7 @@
  * # AboutCtrl
  * Controller of the gioApp
  */
-angular.module('gioApp')
+angular.module('gcrmApp')
   .controller('AboutCtrl', function () {
-    this.awesomeThings = [
-      'HTML5 Boilerplate',
-      'AngularJS',
-      'Karma'
-    ];
+    
   });

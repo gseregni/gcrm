@@ -7,6 +7,6 @@
  * # MainCtrl
  * Controller of the gioApp
  */
-angular.module('gioApp')
+angular.module('gcrmApp')
   .controller('MainCtrl', function () {
 });
