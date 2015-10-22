@@ -1,5 +1,5 @@
 {
-  "name": "gio",
+  "name": "gCrm",
   "private": true,
   "devDependencies": {
     "grunt": "^0.4.5",
