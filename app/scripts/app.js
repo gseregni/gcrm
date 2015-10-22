@@ -8,8 +8,9 @@
  *
  * Main module of the application.
  */
+
 angular
-  .module('gioApp', [
+  .module('gcrmApp', [
     'ngAnimate',
     'ngCookies',
     'ngResource',
@@ -32,8 +33,22 @@ angular
       .otherwise({
         redirectTo: '/'
       });
-  });
+  })
+  .controller('AppCtrl', function($scope, $rootScope, $location) {
 
+    $scope.loginTrello = function() {
+
+    }
+
+    $scope.loginHighrise = function() {
+
+    }
+
+    $scope.loginGoogle = function() {
+
+    }
+
+  });
 
 /******************** TRELLO ********************************/  
 var updateLoggedIn = function() {
