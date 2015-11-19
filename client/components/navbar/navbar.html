@@ -1,0 +1,40 @@
+<div class="navbar navbar-default navbar-static-top" ng-controller="NavbarCtrl">
+  <div class="container">
+    <div class="navbar-header">
+      <button class="navbar-toggle" type="button" ng-click="isCollapsed = !isCollapsed">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a href="/" class="navbar-brand">galimberti-crm</a>
+    </div>
+    <div collapse="isCollapsed" class="navbar-collapse collapse" id="navbar-main">
+      <ul class="nav navbar-nav">
+        <li ng-repeat="item in menu" ng-class="{active: isActive(item.link)}">
+            <a ng-href="{{item.link}}">{{item.title}}</a>
+        </li>
+      </ul>
+
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+            <a href="#" ng-click="authorizeHighRise()">Highrise</a>
+        </li>
+        <li>
+            <a href="#" ng-click="authorizeTrello()">Trello</a>
+        </li>
+
+        <li>
+            <a href="#" id="authorize-button" ng-click="gDriveLogin()">Google Drive Connect</a>
+        </li>
+
+        
+
+        
+
+      </ul>
+
+
+    </div>
+  </div>
+</div>

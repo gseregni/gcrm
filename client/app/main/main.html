@@ -1,0 +1,133 @@
+<div ng-include="'components/navbar/navbar.html'"></div>
+
+<header class="hero-unit" id="banner">
+  <div class="container">
+    <h1>Galimberti CRM</h1>
+    <p class="lead">Beta</p>
+    <img src="assets/images/logo.png" alt="I'm Querior">
+  </div>
+</header>
+
+
+
+<div class="container" >
+  <br>
+  <section id="loginbuttons" ng-hide="gdriveLoggedin">
+    <h4>Per cominciare collegati a Google Drive utilizzando il pulsante nella barra di navigazione</h4>
+  </section>
+  <section id="crmform" ng-show="gdriveLoggedin">
+
+    <div class="row">
+      
+      
+      <div class="col-lg-12">
+        <form role="form">
+         
+          <fieldset class="form-group text-inverse">
+            <label for="hrdeal">Link Highrise</label>
+            <input type="text" class="form-control" id="hrdeal" ng-model="dealurl" placeholder="Paste link" required>
+          </fieldset>
+
+          <div class="col-lg-12">
+            <button type="button" class="btn btn-block btn-sm btn-warning m-y-lg" ng-disabled="!dealurl" ng-click="getHighRiseDeal()" >Verifica Link</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <br><br>
+
+     <div class="row" ng-show="hrValidationMsg">
+      <div class="col-lg-12">
+        <h4>Validation Result: {{hrValidationMsg}}</h4>
+      </div>
+    </div>
+     
+    <div class="row" ng-show="hrdeal.data.deal.name">
+     
+      <div class="col-lg-12">
+        <form class="m-y-lg text-left">
+          <fieldset class="form-group m-y-md text-inverse">
+            <label>Highrise Deal Name:</label>
+            <p>{{hrdeal.data.deal.name}}</p>
+          </fieldset>
+
+          <fieldset class="form-group m-y-md text-inverse">
+            <label>Cliente:</label>
+            <p>{{hrdeal.data.deal.party.name}}</p>
+          </fieldset>
+          <fieldset class="form-group m-y-md text-inverse">
+            <label for="constructionSite">Cantiere in</label>
+            <input type="text" class="form-control" id="constructionSite" ng-model="constructionSite" placeholder="Comune o Comune e via">
+          </fieldset>
+          <fieldset class="form-group m-y-md text-inverse">
+            <label for="jobDescription">Descrizione lavoro</label>
+            <input type="text" class="form-control" id="jobDescription" ng-model="jobDescription" placeholder="Es. Copertura, Pavimentazione in teack, Facciata">
+          </fieldset>
+
+          <fieldset>
+            <label for="jobType">Responsabile</label>
+            
+            <div style="text-align: left;" 
+                 id="dealManager" 
+                 ng-dropdown-multiselect="" 
+                 options="managerOptions" 
+                 selected-model="managerModel" 
+                 extra-settings="managerSettings" 
+                 >
+            </div>  
+            
+          </fieldset>
+
+
+          <fieldset>
+            <label for="jobType">Categoria Lavoro</label>
+            
+            <div style="text-align: left;" 
+                 id="jobType" 
+                 ng-dropdown-multiselect="" 
+                 options="jobTypeOptions" 
+                 selected-model="jobTypeModel" 
+                 extra-settings="jobTypeSettings" 
+                 >
+            </div>  
+            
+          </fieldset>
+
+
+
+          <br>
+          <button type="submit"
+                  ng-disabled="!(hrdeal.data.deal.name && constructionSite && jobDescription && managerModel.id && jobTypeModel.id)" 
+                  class="btn btn-block btn-lg btn-success m-y-lg" 
+                  ng-click="updateHRDeal()">Aggiorna Deal</button>
+        </form>
+      </div>
+    </div>
+
+    <br><br>
+
+    <div class="row" ng-show="resultDealName">
+      <div class="col-lg-12">
+        <form class="m-y-lg text-left">
+          <fieldset class="form-group m-y-md text-inverse">
+            <label>Deal Aggiornato in: </label>
+            <label>{{resultDealName}}</label>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  </section>
+
+
+
+</div>
+
+<footer class="footer">
+  <div class="container">
+      <p>GCRM v0.1 | by
+        <a href="https://twitter.com/querior">@querior</a>
+      </p>
+  </div>
+</footer>
