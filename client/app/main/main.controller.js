@@ -92,6 +92,8 @@ angular.module('galimbertiCrmApp')
               });
 
               console.log("hrdeals",$scope.hrdeal);
+              
+                
               $scope.hrValidationMsg = null;
             })
           });
@@ -197,10 +199,17 @@ angular.module('galimbertiCrmApp')
   					console.log("Result",res);
   					$scope.hrdeal = res;
             $scope.resultDealName = res.data.deal.name;
+
+            // Upsert Trello
+            //if(res && res.data.deal)
+            //  
+            if(res && res.data.deal && country === "SWI"){
+              upsertTrelloCard(res.data.deal.id['$t'], $scope.dealurl, res.data.deal.name,customer)
+            }
+
   				})
 
-          if(country === "SWI")
-            checkGDriveFolders(customer,dealId,$scope.updDealName);
+          
 
   			}else
   				$scope.hrValidationMsg = "Invalid Link";
@@ -283,36 +292,41 @@ angular.module('galimbertiCrmApp')
           for(var i=0; i < folders.length; i++){
             if(folders[i].title.indexOf(beginChar) != -1){
               var request = gapi.client.drive.files.list({
-                'maxResults': '100',
+                'maxResults': '500',
                 'q': "mimeType = 'application/vnd.google-apps.folder' and '" + folders[i].folderId + "' in parents"
               });
-              request.execute(function(resp){
-                if(resp.items && resp.items.length){
-                  var files = resp.items;
-                  var dealUpdated = false;
+              request.then(function(resp){
+                //console.log("resp",resp);
+                if(resp.result.items && resp.result.items.length){
+                  var files = resp.result.items;
+                  //console.log("Files",files);
                   for(var j=0; j < files.length; j++){
+                    //console.log(files[j].title,dealId);
                     if(files[j].title.indexOf(dealId) != -1){
-                      //console.log("update folder with new title",files[i].title,title);
-                      dealUpdated = true;
-                      var body = {'title': title};
-                      var updRequest = gapi.client.drive.files.patch({
-                        'fileId': files[j].id,
-                        'resource': body
-                      });
-                      updRequest.execute(function(resp) {
-                        console.log('New Title: ' + resp.title);
-                      });
-
-                      break;
+                      return files[j];
                     }
                   }
+                }
+              },function(err){ console.log("Error",err)}).then(function(file){ 
+                  if(file){
+                    var body = {'title': title};
+                    var updRequest = gapi.client.drive.files.patch({
+                          'fileId': file.id,
+                          'resource': body
+                        });
+                    updRequest.execute(function(resp) {
 
-                  if(!dealUpdated){
+                      console.log('Updated gdrive folder with new title', resp.title);
+                      //updateTrelloLinks();
+                    });
+                  }else{
                     $scope.copyTemplateFiles(folders[i].folderId,title);
+
                   }
 
-                }
-              },function(err){ console.log("Error",err)})
+
+
+              })
               break;
             }
           }
@@ -411,13 +425,19 @@ angular.module('galimbertiCrmApp')
         data.mimeType = "application/vnd.google-apps.folder";
         gapi.client.drive.files.insert({'resource': data}).execute(
                                           function(result){ 
-                                            console.log("Folder Created",result);
+                                            if(result.title === $scope.updDealName){
+                                              console.log("Update Trello Link",result);
+                                              $scope.trelloDescLink1 = "https://drive.google.com/drive/u/0/folders/" + result.id + "\n\n";
+                                              updateTrelloLinks();
+                                            }
+
+                                            //console.log("Folder Created",result);
                                             if(result.code == 403){
                                               $timeout(function(){
                                                         return createFolder(parentFolderId,title,folderId,parent);
                                                       },200);
                                             }else{
-                                              console.log("Folder Created",result);
+                                              //console.log("Folder Created",result);
                                               return walkDirectoryAndCopy(folderId,parent,result.id);
                                             }
                                           });
@@ -470,16 +490,180 @@ angular.module('galimbertiCrmApp')
                                                   });
                                                   
                                                   request.execute(function(resp) {
-                                                    console.log('Copy ID: ' + resp.id);
+                                                    if(resp.code == 403){
+                                                      request.execute(function(newresp) {
+                                                        console.log("Retry",newresp);
+                                                      });
+                                                    }else{
+                                                      console.log('Copy ID: ' , resp);
+                                                      if(resp.title === "Preventivo e Ordine 2.0")
+                                                      {
+                                                        $scope.trelloDescLink2 = "https://docs.google.com/spreadsheets/d/" + resp.id + "/edit\n\n";
+                                                        updateTrelloLinks()
+                                                      }
+                                                      // update trello card with link
+                                                    }
                                                     //return null;  // Don't wait for anything
                                                   });
                                                 },200);
                                               }
                                           
-                                }));
+                                        }));
+
                             });
+                            //.then(function(){ console.log("Finished copy gdrive");}); // finish $q.all;
       };
 
+
+
+      /////////////////////////////////////////////////////////////////////////////////////////
+      //                        Trello Section                                               //
+      /////////////////////////////////////////////////////////////////////////////////////////
+      var boardId = "BNBe9zmb";
+      var listEmptyCardId = "55881caf1a5446f4de06a100";
+      var listPreventiviDaFareId = "55881caf1a5446f4de06a101";
+      var templateCardId = "56054cdee8dfe86066e5f9d7";
+
+      
+
+      $scope.trelloDescRowsBottom  = "**Contratti, Fatturazione e Pagamenti Clienti**\n" +
+                                     "Link!\n\n" +
+                                     "**Link a Fornitori**\n" +
+                                     "Link!";
+
+
+
+      
+      var upsertTrelloCard = function(dealId, dealUrl,cardTitle,customer){
+        $rootScope.authorizeTrello();
+
+        $scope.trelloDescRow1  = "**Cartella Ordine Vendita**\n";
+        $scope.trelloDescLink1 = "Link!\n\n";
+
+        $scope.trelloDescRow2  = "**Calcolo Preventivo e Contratto**\n";
+        $scope.trelloDescLink2 = "Link!\n\n";
+
+        $scope.trelloDescRow3  = "**Deal Highrise**\n";
+
+        var url = dealUrl;
+        if(dealUrl.indexOf("/edit") != -1){
+          url = url.substring(0,dealUrl.indexOf("/edit"));
+        }
+
+
+        $scope.trelloDescLink3 = url + "\n\n";
+
+
+
+        Trello.get("/lists/" + listPreventiviDaFareId + "/cards")
+          .then(function(cardList){
+            console.log("CardList preventivi da fare",cardList)
+            if(cardList && cardList.length)
+              for(var i=0; i < cardList.length; i++){
+                if(cardList[i].name.indexOf(dealId) != -1){
+                  return cardList[i];
+                }
+              }
+            
+            return null;
+
+            
+          })
+          .then(function(card){
+            var desc =  $scope.trelloDescRow1 +
+                        $scope.trelloDescLink1 +
+                        $scope.trelloDescRow2 +
+                        $scope.trelloDescLink2 + 
+                        $scope.trelloDescRow3  +
+                        $scope.trelloDescLink3 +
+                        $scope.trelloDescRowsBottom;
+            if(card){
+              
+              Trello.put("/cards/" + card.id, {name: cardTitle, desc: desc},function(response){
+                console.log("Update card",response);
+                // verifica le cartelle in GDrive
+                checkGDriveFolders(customer,dealId,$scope.updDealName);
+
+              });
+
+            }
+            else{
+              console.log("Create new card");
+              // Template Card
+              Trello.get("/cards/" + templateCardId)
+                .then(function(card){
+                  if(card){
+                     var newCard = {
+                        name: cardTitle,
+                        idCardSource: card.id,
+                        due: "",
+                        idList: listPreventiviDaFareId,
+                        pos: "bottom",
+                        desc: desc
+
+                      };
+
+                     console.log("template card",card);
+                     
+
+                     Trello.post("/cards",newCard,function(result){
+                      console.log("Card Created Successfully",result);
+                      // verifica le cartelle in GDrive
+                      checkGDriveFolders(customer,dealId,$scope.updDealName);
+                     })
+                  }
+
+                  return card;
+              })
+
+
+
+            }
+
+          })
+      } // end upsertTrelloCard
+
+      var updateTrelloLinks = function(){
+
+        if($scope.hrdeal){
+          var dealId = $scope.hrdeal.data.deal.id['$t'];
+
+
+          Trello.get("/lists/" + listPreventiviDaFareId + "/cards")
+                            .then(function(cardList){
+                              console.log("CardList preventivi da fare",cardList)
+                              if(cardList && cardList.length)
+                                for(var i=0; i < cardList.length; i++){
+                                  if(cardList[i].name.indexOf(dealId) != -1){
+                                    return cardList[i];
+                                  }
+                                }
+                              
+                              return null;
+
+                              
+                            })
+                            .then(function(card){
+                              var desc =  $scope.trelloDescRow1 +
+                                          $scope.trelloDescLink1 +
+                                          $scope.trelloDescRow2 +
+                                          $scope.trelloDescLink2 + 
+                                          $scope.trelloDescRow3  +
+                                          $scope.trelloDescLink3 +
+                                          $scope.trelloDescRowsBottom;
+
+                              if(card){
+                                Trello.put("/cards/" + card.id, {desc: desc},function(response){
+                                    console.log("Update with new links",response);
+                                  });
+                              }
+
+
+                            });
+          }
+          else
+            console.log("Undefined hrdeal");
+      }
   		
 
   });

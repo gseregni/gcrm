@@ -55,15 +55,25 @@ angular.module('galimbertiCrmApp')
           $scope.modalInstance.dismiss();
     }
 
-    $scope.authorizeTrello = function(){
-      console.log("authorizeTrello")
+    var authenticationSuccess = function() { console.log("Successful authentication"); };
+    var authenticationFailure = function() { console.log("Failed authentication"); };
 
-      $scope.modalInstance = $modal.open({
-            templateUrl: 'components/modal/authorize-trello-modal.html',
-            scope: $scope,
-            size: 'md'
-      });
+    $rootScope.authorizeTrello = function(){
+      console.log("authorize trello")
+        Trello.authorize({
+          type: "popup",
+          name: "Getting Started Application",
+          scope: {
+            read: true,
+            write: true 
+          },
+          expiration: "never",
+          authenticationSuccess,
+          authenticationFailure
+        });
     }
+
+    
 
     $scope.saveTrelloTokens = function(){
       // TODO insert tokens in local storage
