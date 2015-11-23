@@ -1,12 +1,16 @@
 'use strict';
 
 angular.module('galimbertiCrmApp')
-  .controller('MainCtrl', function ($rootScope, $scope, $http, $q, $timeout,$interval, localStorageService, HighRiseDeal,HighRisePeople,HighRiseDealCategory) {
+  .controller('MainCtrl', function ($rootScope, $scope, $http, $q, $timeout,$interval, localStorageService, 
+                                    HighRiseDeal,
+                                    HighRisePeople,
+                                    HighRiseDealCategory,
+                                    HighRiseNotes) {
 	   
 
 
-  		$scope.hrtokenIta =  localStorageService.get("hrtokenIta");   // = "1dcf57fc8ac60618e1219f8849b0b7ff"
-  		$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  //= "0b7bc01934a438ff224d9f0be9da7c29";
+  		$scope.hrtokenIta =  localStorageService.get("hrtokenIta");  
+  		$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  
 
   		var swiHighriseUrl = "https://swissgalimbertisa.highrisehq.com/deals",
   			itaHighriseUrl = "https://galimbertisrl1.highrisehq.com/deals";
@@ -47,8 +51,8 @@ angular.module('galimbertiCrmApp')
 
   		$scope.getHighRiseDeal = function(){
 
-  			$scope.hrtokenIta =  localStorageService.get("hrtokenIta");   // = "1dcf57fc8ac60618e1219f8849b0b7ff"
-  			$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  //= "0b7bc01934a438ff224d9f0be9da7c29";
+  			$scope.hrtokenIta =  localStorageService.get("hrtokenIta");   
+  			$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  
   			$scope.hrdeal = null;
   			$scope.hrValidationMsg = null;
 
@@ -215,6 +219,67 @@ angular.module('galimbertiCrmApp')
   				$scope.hrValidationMsg = "Invalid Link";
   		}
 
+
+      var updateHRNotes = function(dealId,trelloLink){
+        if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
+                  HighRiseNotes.get({dealurl: swiHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenSwi},
+                                    function(result){
+                                      console.log("Notes from Highrise",result.data.notes,result.data.notes.note);
+
+                                      if(!result.data.notes.note){
+                                        var note = new HighRiseNotes({ dealurl: swiHighriseUrl + "/" + dealId + "/notes", 
+                                                                       body: trelloLink, 
+                                                                       id: dealId,
+                                                                       token: $scope.hrtokenSwi,
+                                                                       country: 'SWI'});
+                                        note.$save(function(savedNotes){
+                                          console.log("Saved Notes",savedNotes);
+                                        })
+                                      }else{
+                                        HighRiseNotes.update({ dealurl: swiHighriseUrl + "/" + dealId + "/notes" , 
+                                                               body: trelloLink, 
+                                                               id: dealId,
+                                                               token: $scope.hrtokenSwi,
+                                                               country: 'SWI'
+                                                            },
+                                        function(updatedNote){
+                                          console.log("Note Updated",updatedNote);
+                                        })
+                                      }
+
+
+
+                                    });
+        }
+        else if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
+            HighRiseNotes.get({dealurl: itaHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenIta},
+                               function(result){
+                                console.log("Notes from Highrise",result.data.notes,result.data.notes.note);
+
+                                if(!result.data.notes.note){
+                                  var note = new HighRiseNotes({dealurl: itaHighriseUrl + "/" + dealId + "/notes", 
+                                                                body: trelloLink, 
+                                                                id: dealId,
+                                                                token: $scope.hrtokenIta,
+                                                                country: 'ITA'
+                                                              });
+                                  note.$save(function(savedNotes){
+                                          console.log("Saved Notes",savedNotes);
+                                        })
+                                }else{
+                                  HighRiseNotes.update({dealurl: itaHighriseUrl + "/" + dealId + "/notes", 
+                                                        body: trelloLink, 
+                                                        id: dealId,
+                                                        token: $scope.hrtokenIta,
+                                                        country: 'ITA'},
+                                  function(updatedNote){
+                                    console.log("Note Updated",updatedNote);
+                                  })
+                                }
+                              });
+        }
+      }
+
       ///////////////////////////////////////////////////////////////////////////////////////////
       //                    GDRIVE Section                                                     //
       ///////////////////////////////////////////////////////////////////////////////////////////
@@ -290,19 +355,22 @@ angular.module('galimbertiCrmApp')
         if(customer){
           var beginChar = customer.toUpperCase().charAt(0);
           for(var i=0; i < folders.length; i++){
-            if(folders[i].title.indexOf(beginChar) != -1){
+            if(folders[i].title.indexOf(beginChar) != -1 && !folders[i].explicitlyTrashed){
               var request = gapi.client.drive.files.list({
                 'maxResults': '500',
                 'q': "mimeType = 'application/vnd.google-apps.folder' and '" + folders[i].folderId + "' in parents"
               });
               request.then(function(resp){
+                console.log("GDrive folders",resp)
+
+
                 //console.log("resp",resp);
                 if(resp.result.items && resp.result.items.length){
                   var files = resp.result.items;
                   //console.log("Files",files);
                   for(var j=0; j < files.length; j++){
                     //console.log(files[j].title,dealId);
-                    if(files[j].title.indexOf(dealId) != -1){
+                    if(files[j].title.indexOf(dealId) != -1 && !files[j].explicitlyTrashed){
                       return files[j];
                     }
                   }
@@ -320,6 +388,7 @@ angular.module('galimbertiCrmApp')
                       //updateTrelloLinks();
                     });
                   }else{
+                    //console.log("copyTemplateFiles",folders[i]);
                     $scope.copyTemplateFiles(folders[i].folderId,title);
 
                   }
@@ -399,7 +468,7 @@ angular.module('galimbertiCrmApp')
               'path': '/drive/v2/files',
               'method': 'GET',
               'params': {
-                  'maxResults': '1',
+                  'maxResults': '100',
                   'q': "title = '0 TEMPLATE' and mimeType = 'application/vnd.google-apps.folder'",
 
                }
@@ -408,7 +477,8 @@ angular.module('galimbertiCrmApp')
 
         request.then(function(resp){
           console.log("Resp",resp);
-          if(resp.result.items && resp.result.items[0]){
+
+          if(resp.result.items && resp.result.items[0] && !resp.result.items[0].explicitlyTrashed){
             var file = resp.result.items[0];
             $scope.gdriveRoot = { title: file.title,  fileId:  file.id, mimeType: file.mimeType, items: [], destId: containerFolderId }; // '0B55iJQF8ivu0WjlFY0pmLThrWWs'
             walkDirectoryAndCopy(file.id,$scope.gdriveRoot,containerFolderId,dealTitle);
@@ -466,7 +536,7 @@ angular.module('galimbertiCrmApp')
                                 return $q.all(entries.items.map(function(file) {
                                           
                                             //console.log(file.title + " - " + file.mimeType)
-                                            if (file.mimeType === 'application/vnd.google-apps.folder') {
+                                            if (file.mimeType === 'application/vnd.google-apps.folder' && !file.explicitlyTrashed) {
                                                 $timeout(function(){
                                                   var origParent = { title: file.title,  fileId:  file.id, mimeType: file.mimeType, items: [] };
                                                   parent.items.push(origParent);
@@ -474,7 +544,7 @@ angular.module('galimbertiCrmApp')
 
                                                 },200);
                                                
-                                            } else {
+                                            } else if(!file.explicitlyTrashed){
                                                 $timeout(function(){
                                                   //console.log("Copy file in parent:",file.title,parent);
                                                   parent.items.push({ title: file.title,  fileId:  file.id, mimeType: file.mimeType }); 
@@ -580,7 +650,9 @@ angular.module('galimbertiCrmApp')
             if(card){
               
               Trello.put("/cards/" + card.id, {name: cardTitle, desc: desc},function(response){
-                console.log("Update card",response);
+                console.log("Trello Card Updated",response.url);
+                // Update HighriseNotes
+                updateHRNotes(dealId,response.url)
                 // verifica le cartelle in GDrive
                 checkGDriveFolders(customer,dealId,$scope.updDealName);
 
@@ -603,8 +675,9 @@ angular.module('galimbertiCrmApp')
 
                       };
 
-                     console.log("template card",card);
-                     
+                     console.log("Trello Card Created now update Highrise deal notes",card.url);
+                     // Update HighriseNotes
+                     updateHRNotes(dealId,card.url)
 
                      Trello.post("/cards",newCard,function(result){
                       console.log("Card Created Successfully",result);

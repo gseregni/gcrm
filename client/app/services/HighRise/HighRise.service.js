@@ -16,4 +16,14 @@ angular.module('galimbertiCrmApp')
   })
   .factory('HighRiseDealCategory', function ($resource) {
     return $resource('/api/hrdealcategories', { }, { } );
+  })
+  .factory('HighRiseNotes', function ($resource) {
+    return $resource('/api/hrdealnotes/:id', {
+      id: '@_id'
+    },
+    {
+      update: {
+        method: 'PUT',
+      }
+    });
   });
