@@ -383,9 +383,7 @@ angular.module('galimbertiCrmApp')
                           'resource': body
                         });
                     updRequest.execute(function(resp) {
-
                       console.log('Updated gdrive folder with new title', resp.title);
-                      //updateTrelloLinks();
                     });
                   }else{
                     //console.log("copyTemplateFiles",folders[i]);
@@ -496,7 +494,7 @@ angular.module('galimbertiCrmApp')
         gapi.client.drive.files.insert({'resource': data}).execute(
                                           function(result){ 
                                             if(result.title === $scope.updDealName){
-                                              console.log("Update Trello Link",result);
+                                              console.log("Update Trello Link from gapi insert",result);
                                               $scope.trelloDescLink1 = "https://drive.google.com/drive/u/0/folders/" + result.id + "\n\n";
                                               updateTrelloLinks();
                                             }
@@ -569,6 +567,7 @@ angular.module('galimbertiCrmApp')
                                                       if(resp.title === "Preventivo e Ordine 2.0")
                                                       {
                                                         $scope.trelloDescLink2 = "https://docs.google.com/spreadsheets/d/" + resp.id + "/edit\n\n";
+                                                        console.log("Update Trello Link from file copy");
                                                         updateTrelloLinks()
                                                       }
                                                       // update trello card with link
@@ -649,25 +648,18 @@ angular.module('galimbertiCrmApp')
                         $scope.trelloDescRowsBottom;
             if(card){
               
-              Trello.put("/cards/" + card.id, {name: cardTitle, desc: desc},function(response){
-                console.log("Trello Card Updated",response.url);
-                // Update HighriseNotes
-                updateHRNotes(dealId,response.url)
-                // verifica le cartelle in GDrive
-                checkGDriveFolders(customer,dealId,$scope.updDealName);
-
-              });
+              checkGDriveFolders(customer,dealId,$scope.updDealName);
 
             }
             else{
               console.log("Create new card");
               // Template Card
               Trello.get("/cards/" + templateCardId)
-                .then(function(card){
-                  if(card){
+                .then(function(tcard){
+                  if(tcard){
                      var newCard = {
                         name: cardTitle,
-                        idCardSource: card.id,
+                        idCardSource: tcard.id,
                         due: "",
                         idList: listPreventiviDaFareId,
                         pos: "bottom",
@@ -675,18 +667,22 @@ angular.module('galimbertiCrmApp')
 
                       };
 
-                     console.log("Trello Card Created now update Highrise deal notes",card.url);
-                     // Update HighriseNotes
-                     updateHRNotes(dealId,card.url)
+                     
+                     
 
                      Trello.post("/cards",newCard,function(result){
-                      console.log("Card Created Successfully",result);
+                      console.log("Card Created Successfully - now update Highrise",result);
+
+
+                      // Update HighriseNotes
+                      updateHRNotes(dealId,result.url)
+
                       // verifica le cartelle in GDrive
                       checkGDriveFolders(customer,dealId,$scope.updDealName);
                      })
                   }
 
-                  return card;
+                  return tcard;
               })
 
 
