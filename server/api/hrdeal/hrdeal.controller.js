@@ -36,7 +36,7 @@ exports.deal = function(req, res) {
 
 	//it's usefull to handle request errors to avoid, for example, socket hang up errors on request timeouts
 	apireq.on('error', function(err){
-	    res.json({ error: err, data: null});
+	    return res.json({ error: err, data: null});
 	});
 };
 

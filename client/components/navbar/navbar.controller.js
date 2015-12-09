@@ -68,8 +68,8 @@ angular.module('galimbertiCrmApp')
             write: true 
           },
           expiration: "never",
-          authenticationSuccess,
-          authenticationFailure
+          success: authenticationSuccess,
+          error: authenticationFailure
         });
     }
 
