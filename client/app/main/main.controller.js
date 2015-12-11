@@ -295,6 +295,13 @@ angular.module('galimbertiCrmApp')
                                       categoryId: $scope.jobTypeModel.id,
                   										country: country
                   									  });
+          var oldJobCategory;
+          $scope.jobTypeOptions.forEach(function(o){
+            if(o.id === $scope.hrdeal.data.deal.category.id['$t'])
+              oldJobCategory = o.label;  
+          })
+
+
 
   				hrd.$update(function(res){
   					//console.log("Result",res);
@@ -303,7 +310,7 @@ angular.module('galimbertiCrmApp')
 
             // Upsert Trello
             if(res && res.data.deal && country === "SWI"){
-              upsertTrelloCard(res.data.deal.id['$t'], $scope.dealurl, res.data.deal.name,customer)
+              upsertTrelloCard(res.data.deal.id['$t'], $scope.dealurl, res.data.deal.name,customer,oldJobCategory)
             }
 
   				})
@@ -331,9 +338,11 @@ angular.module('galimbertiCrmApp')
                                           console.log("Saved Notes",savedNotes);
                                         })
                                       }else{
+
                                         HighRiseNotes.update({ dealurl: swiHighriseUrl + "/" + dealId + "/notes" , 
                                                                body: trelloLink, 
-                                                               id: dealId,
+                                                               id: result.data.notes.note.id['$t'],
+                                                               dealId: dealId,
                                                                token: $scope.hrtokenSwi,
                                                                country: 'SWI'
                                                             },
@@ -346,7 +355,7 @@ angular.module('galimbertiCrmApp')
 
                                     });
         }
-        else if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
+        else if($scope.dealurl.indexOf(itaHighriseUrl) != -1){
             HighRiseNotes.get({dealurl: itaHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenIta},
                                function(result){
                                 //console.log("Notes from Highrise",result.data.notes,result.data.notes.note);
@@ -559,6 +568,12 @@ angular.module('galimbertiCrmApp')
                           });
                       updRequest.execute(function(resp) {
                         console.log('Updated gdrive folder with new title', resp);
+
+                        //updateTrelloLinks();
+
+                        
+                        
+
                       });
                     }else if(newgfolder){
                       //console.log("copyTemplateFiles",newgfolder);
@@ -571,6 +586,29 @@ angular.module('galimbertiCrmApp')
           }
         }
         
+      }
+
+
+      function retrieveAllFilesInFolder(folderId, callback) {
+        var retrievePageOfChildren = function(request, result) {
+          request.execute(function(resp) {
+            result = result.concat(resp.items);
+            var nextPageToken = resp.nextPageToken;
+            if (nextPageToken) {
+              request = gapi.client.drive.children.list({
+                'folderId' : folderId,
+                'pageToken': nextPageToken
+              });
+              retrievePageOfChildren(request, result);
+            } else {
+              callback(result);
+            }
+          });
+        }
+        var initialRequest = gapi.client.drive.children.list({
+            'folderId' : folderId
+          });
+        retrievePageOfChildren(initialRequest, []);
       }
 
       var populateFolders = function(){
@@ -710,7 +748,7 @@ angular.module('galimbertiCrmApp')
                                                         console.log("Retry",newresp);
                                                       });
                                                     }else{
-                                                      console.log('Copy ID: ' , resp);
+                                                      //console.log('Copy ID: ' , resp);
                                                       if(resp.title === "Preventivo e Ordine 2.0")
                                                       {
                                                         $scope.trelloDescLink2 = "https://docs.google.com/spreadsheets/d/" + resp.id + "/edit\n\n";
@@ -735,10 +773,29 @@ angular.module('galimbertiCrmApp')
       /////////////////////////////////////////////////////////////////////////////////////////
       //                        Trello Section                                               //
       /////////////////////////////////////////////////////////////////////////////////////////
-      var boardId = "BNBe9zmb";
-      var listEmptyCardId = "55881caf1a5446f4de06a100";
-      var listPreventiviDaFareId = "55881caf1a5446f4de06a101";
-      var templateCardId = "56054cdee8dfe86066e5f9d7";
+      
+
+      var tettiBoardId = "BNBe9zmb";
+      var tettiListPreventiviDaFareId = "55881caf1a5446f4de06a101";
+      var tettiTemplateCardId = "56054cdee8dfe86066e5f9d7";
+
+      var caseBoardId = "Ud8I2OJ0";
+      var caseListPreventiviDaFareId = "55a5060a8e660ea86ae09bf2";
+      var caseTemplateCardId = "560a80e753f6d2a58131810e";
+
+      var outdooorBoardId = "iDrCmTUi";
+      var outdooorListPreventiviDaFareId = "566944e6308c21d95df15f2c";
+      var outdooorTemplateCardId = "55b1ed7f76834b6aa0787ddc";
+
+      var floorBoardId = "DT5l3jTm";
+      var floorListPreventiviDaFareId = "566961e75c22b545f24f8a01";
+      var floorTemplateCardId = "566978a21924a87c9c420baf";
+
+      //var listEmptyCardId = "55881caf1a5446f4de06a100";
+      var listPreventiviDaFareId = tettiListPreventiviDaFareId; 
+      var templateCardId = tettiBoardId;
+
+      //var templateCardId = "56054cdee8dfe86066e5f9d7";
 
       
 
@@ -750,96 +807,212 @@ angular.module('galimbertiCrmApp')
 
 
       
-      var upsertTrelloCard = function(dealId, dealUrl,cardTitle,customer){
+      var upsertTrelloCard = function(dealId, dealUrl,cardTitle,customer,oldCardCategory){
         $rootScope.authorizeTrello();
 
-        $scope.trelloDescRow1  = "**Cartella Ordine Vendita**\n";
-        $scope.trelloDescLink1 = "Link!\n\n";
+        var oldTrelloList = tettiListPreventiviDaFareId;
+        if(oldCardCategory === "COSTRUZIONI")
+          oldTrelloList = caseListPreventiviDaFareId;
+        else if(oldCardCategory === "TETTI")
+          oldTrelloList = tettiListPreventiviDaFareId;
+        else if(oldCardCategory === "OUTDOOR")
+          oldTrelloList = outdooorListPreventiviDaFareId;
+        else if($scope.hrdeal.data.deal.category.name === "PARQUET")
+          oldTrelloList = floorListPreventiviDaFareId;
 
-        $scope.trelloDescRow2  = "**Calcolo Preventivo e Contratto**\n";
-        $scope.trelloDescLink2 = "Link!\n\n";
+        if(oldCardCategory && oldCardCategory !== $scope.hrdeal.data.deal.category.name){
+          // delete card if exists
+          
+          
+          //console.log("Remove card from old list",oldTrelloList);
 
-        $scope.trelloDescRow3  = "**Deal Highrise**\n";
+          Trello.get("/lists/" + oldTrelloList + "/cards") 
+                .then(function(cardList){
+                  if(cardList && cardList.length)
+                    for(var i=0; i < cardList.length; i++){
+                      if(cardList[i].name.indexOf(dealId) != -1){
+                        return cardList[i];
+                      }
+                    }
+                  
+                  return null;
 
-        var url = dealUrl;
-        if(dealUrl.indexOf("/edit") != -1){
-          url = url.substring(0,dealUrl.indexOf("/edit"));
-        }
-
-
-        $scope.trelloDescLink3 = url + "\n\n";
-
-
-
-        Trello.get("/lists/" + listPreventiviDaFareId + "/cards")
-          .then(function(cardList){
-            //console.log("CardList preventivi da fare",cardList)
-            if(cardList && cardList.length)
-              for(var i=0; i < cardList.length; i++){
-                if(cardList[i].name.indexOf(dealId) != -1){
-                  return cardList[i];
-                }
-              }
-            
-            return null;
-
-            
-          })
-          .then(function(card){
-            var desc =  $scope.trelloDescRow1 +
-                        $scope.trelloDescLink1 +
-                        $scope.trelloDescRow2 +
-                        $scope.trelloDescLink2 + 
-                        $scope.trelloDescRow3  +
-                        $scope.trelloDescLink3 +
-                        $scope.trelloDescRowsBottom;
-            if(card){
-              
-              checkGDriveFolders(customer,dealId,$scope.updDealName);
-
-            }
-            else{
-              console.log("Create new card");
-              // Template Card
-              Trello.get("/cards/" + templateCardId)
-                .then(function(tcard){
-                  if(tcard){
-                     var newCard = {
-                        name: cardTitle,
-                        idCardSource: tcard.id,
-                        due: "",
-                        idList: listPreventiviDaFareId,
-                        pos: "bottom",
-                        desc: desc
-
-                      };
-
-                     Trello.post("/cards",newCard,function(result){
-                      console.log("Card Created Successfully - now update Highrise",result);
-
-
-                      // Update HighriseNotes
-                      updateHRNotes(dealId,result.url)
-
-                      // verifica le cartelle in GDrive
-                      checkGDriveFolders(customer,dealId,$scope.updDealName);
-                     })
+                  
+                })
+                .then(function(card){ 
+                  if(card){
+                    
+                    Trello.delete("/cards/" + card.id)   
+                          .then(function(result){
+                            //console.log("Card Desc",card)
+                            generateTrelloCard(dealId, dealUrl,cardTitle,customer,card.desc);
+                          })
+                  }else{
+                    console.log("Create new Trello Card");
+                    generateTrelloCard(dealId, dealUrl,cardTitle,customer);
                   }
+                });
 
-                  return tcard;
-              })
-            } // end create new card
+        }else { // update card
+          Trello.get("/lists/" + oldTrelloList + "/cards") 
+                .then(function(cardList){
+                  if(cardList && cardList.length)
+                    for(var i=0; i < cardList.length; i++){
+                      if(cardList[i].name.indexOf(dealId) != -1){
+                        return cardList[i];
+                      }
+                    }
+                  
+                  return null;
 
-          })
+                  
+                })
+                .then(function(card){ 
+                  if(card){
+                    generateTrelloCard(dealId, dealUrl,cardTitle,customer,card.desc);
+                  }else{
+                    generateTrelloCard(dealId, dealUrl,cardTitle,customer);
+                  }
+                });
+        } // end update card
       } // end upsertTrelloCard
+
+
+      var generateTrelloCard = function(dealId, dealUrl,cardTitle,customer,cardDesc){
+          if($scope.hrdeal.data.deal.category.name === "COSTRUZIONI"){
+            listPreventiviDaFareId = caseListPreventiviDaFareId;
+            templateCardId = caseTemplateCardId;
+          }
+          else if($scope.hrdeal.data.deal.category.name === "TETTI"){
+            listPreventiviDaFareId = tettiListPreventiviDaFareId;
+            templateCardId = tettiTemplateCardId;
+          }
+          else if($scope.hrdeal.data.deal.category.name === "OUTDOOR"){
+            listPreventiviDaFareId = outdooorListPreventiviDaFareId;
+            templateCardId = outdooorTemplateCardId;
+          }
+          else if($scope.hrdeal.data.deal.category.name === "PARQUET"){
+            listPreventiviDaFareId = floorListPreventiviDaFareId;
+            templateCardId = floorTemplateCardId;
+          }else {
+            listPreventiviDaFareId = tettiListPreventiviDaFareId;
+            templateCardId = tettiTemplateCardId;
+          }
+          
+
+
+          $scope.trelloDescRow1  = "**Cartella Ordine Vendita**\n";
+          $scope.trelloDescLink1 = "Link!\n\n";
+
+          $scope.trelloDescRow2  = "**Calcolo Preventivo e Contratto**\n";
+          $scope.trelloDescLink2 = "Link!\n\n";
+
+          $scope.trelloDescRow3  = "**Deal Highrise**\n";
+
+          var url = dealUrl;
+          if(dealUrl.indexOf("/edit") != -1){
+            url = url.substring(0,dealUrl.indexOf("/edit"));
+          }
+
+
+          $scope.trelloDescLink3 = url + "\n\n";
+
+
+
+          Trello.get("/lists/" + listPreventiviDaFareId + "/cards") 
+            .then(function(cardList){
+              if(cardList && cardList.length)
+                for(var i=0; i < cardList.length; i++){
+                  if(cardList[i].name.indexOf(dealId) != -1){
+                    return cardList[i];
+                  }
+                }
+              return null;
+            })
+            .then(function(card){
+              var desc = cardDesc;
+              if(!cardDesc)
+                desc =    $scope.trelloDescRow1 +
+                          $scope.trelloDescLink1 +
+                          $scope.trelloDescRow2 +
+                          $scope.trelloDescLink2 + 
+                          $scope.trelloDescRow3  +
+                          $scope.trelloDescLink3 +
+                          $scope.trelloDescRowsBottom;
+
+              
+              if(card){
+                //console.log("checkGDriveFolders and update card")
+                checkGDriveFolders(customer,dealId,$scope.updDealName);
+
+              }
+              else{
+                
+                // Template Card
+                Trello.get("/cards/" + templateCardId)
+                  .then(function(tcard){
+                    if(tcard){
+                       var newCard = {
+                          name: cardTitle,
+                          idCardSource: tcard.id,
+                          due: "",
+                          idList: listPreventiviDaFareId, 
+                          pos: "bottom",
+                          desc: desc
+
+                        };
+
+                        console.log("Create new card",newCard);
+
+                       Trello.post("/cards",newCard,function(result){
+                        console.log("Card Created Successfully - now update Highrise",result);
+
+
+                        // Update HighriseNotes
+                        updateHRNotes(dealId,result.url)
+                        
+                        // verifica le cartelle in GDrive
+                        checkGDriveFolders(customer,dealId,$scope.updDealName);
+                       })
+                    }
+
+                    return tcard;
+                })
+              } // end create new card
+              
+          });
+
+      }
+
+
 
       var updateTrelloLinks = function(){
 
         if($scope.hrdeal){
           var dealId = $scope.hrdeal.data.deal.id['$t'];
 
+          if($scope.hrdeal.data.deal.category.name === "COSTRUZIONI"){
+            listPreventiviDaFareId = caseListPreventiviDaFareId;
+            templateCardId = caseTemplateCardId;
+          }
+          else if($scope.hrdeal.data.deal.category.name === "TETTI"){
+            listPreventiviDaFareId = tettiListPreventiviDaFareId;
+            templateCardId = tettiTemplateCardId;
+          }
+          else if($scope.hrdeal.data.deal.category.name === "OUTDOOR"){
+            listPreventiviDaFareId = outdooorListPreventiviDaFareId;
+            templateCardId = outdooorTemplateCardId;
+          }
+          else if($scope.hrdeal.data.deal.category.name === "PARQUET"){
+            listPreventiviDaFareId = floorListPreventiviDaFareId;
+            templateCardId = floorTemplateCardId;
+          }else{
+            listPreventiviDaFareId = tettiListPreventiviDaFareId;
+            templateCardId = tettiTemplateCardId;
+          }
 
-          Trello.get("/lists/" + listPreventiviDaFareId + "/cards")
+
+          Trello.get("/lists/" + listPreventiviDaFareId + "/cards") 
                             .then(function(cardList){
                               console.log("CardList preventivi da fare",cardList)
                               if(cardList && cardList.length)
@@ -863,9 +1036,11 @@ angular.module('galimbertiCrmApp')
                                           $scope.trelloDescRowsBottom;
 
                               if(card){
+                                //console.log("Card Desc",desc)
                                 Trello.put("/cards/" + card.id, {desc: desc},function(response){
                                     console.log("Update with new links",response);
                                   });
+
                               }
 
 
@@ -874,6 +1049,8 @@ angular.module('galimbertiCrmApp')
           else
             console.log("Undefined hrdeal");
       }
-  		
+
+
+
 
   });
