@@ -3,7 +3,7 @@
 angular.module('galimbertiCrmApp')
   .config(function ($stateProvider) {
     $stateProvider
-      .state('main', {
+      .state('main_old', {
         url: '/',
         templateUrl: 'app/main/main.html',
         controller: 'MainCtrl'

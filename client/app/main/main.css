@@ -1,3 +1,7 @@
+html {
+    background: rgba(0, 0, 0, 0.7);
+}
+
 .thing-form {
     margin: 20px 0;
 }
@@ -31,4 +35,9 @@
 
 .navbar-text {
     margin-left: 15px;
+}
+
+.abcRioButtonContentWrapper {
+    background: rgba(0, 0, 0, 0.7);
+    color: #F0AD4E;
 }

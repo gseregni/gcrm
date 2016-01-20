@@ -1,7 +1,12 @@
 'use strict';
 
 angular.module('galimbertiCrmApp')
-  .controller('NavbarCtrl', function ($rootScope, $scope, $location, $modal, localStorageService) {
+  .controller('NavbarCtrl', function ($rootScope, 
+                                      $scope, 
+                                      $location, 
+                                      $modal,
+                                      $timeout,
+                                      localStorageService) {
     $scope.menu = [{
       'title': 'Home',
       'link': '/'
@@ -33,7 +38,7 @@ angular.module('galimbertiCrmApp')
 
         if($scope.modalInstance)
           $scope.modalInstance.dismiss();
-      }
+    }
     
 
 
@@ -55,11 +60,19 @@ angular.module('galimbertiCrmApp')
           $scope.modalInstance.dismiss();
     }
 
-    var authenticationSuccess = function() { console.log("Successful authentication"); };
+    var authenticationSuccess = function() { 
+                                  console.log("Trello ")
+                                  Trello.get("/tokens/" + Trello.token() + "/member/fullName",function(res){
+                                      $rootScope.trelloToken = Trello.token();
+                                      $rootScope.trelloFullName = res._value;  
+                                      $scope.$digest();                                    
+                                  })
+                                }; 
+
     var authenticationFailure = function() { console.log("Failed authentication"); };
 
     $rootScope.authorizeTrello = function(){
-      console.log("authorize trello")
+        console.log("authorize trello")
         Trello.authorize({
           type: "popup",
           name: "Getting Started Application",
@@ -68,8 +81,8 @@ angular.module('galimbertiCrmApp')
             write: true 
           },
           expiration: "never",
-          success: authenticationSuccess,
-          error: authenticationFailure
+          success:  authenticationSuccess,
+          error:    authenticationFailure
         });
     }
 
@@ -81,6 +94,16 @@ angular.module('galimbertiCrmApp')
       if($scope.modalInstance)
           $scope.modalInstance.dismiss();
     }
+
+    var checkTrelloToken = function(){
+       
+       Trello.authorize({type: "popup",
+                         success:  authenticationSuccess,
+                         error:    authenticationFailure});
+       
+    }
+
+    checkTrelloToken();
 
 
   });

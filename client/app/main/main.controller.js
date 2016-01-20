@@ -1,11 +1,22 @@
 'use strict';
 
 angular.module('galimbertiCrmApp')
-  .controller('MainCtrl', function ($rootScope, $scope, $http, $q, $timeout,$interval, localStorageService, 
+  .controller('MainCtrl', function ($rootScope, 
+                                    $scope, 
+                                    $state,
+                                    $http, 
+                                    $q, 
+                                    $timeout,
+                                    $interval,
+                                    $modal, 
+                                    $location,
+                                    $window,
+                                    localStorageService, 
                                     HighRiseDeal,
                                     HighRisePeople,
                                     HighRiseDealCategory,
-                                    HighRiseNotes) {
+                                    HighRiseNotes,
+                                    HighRiseCustomFields) {
 	   
 
 
@@ -50,16 +61,13 @@ angular.module('galimbertiCrmApp')
 
 
   		$scope.getHighRiseDeal = function(){
+
+        populateFolders();
         
   			$scope.hrtokenIta =  localStorageService.get("hrtokenIta");   
   			$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  
   			$scope.hrdeal = null;
   			$scope.hrValidationMsg = null;
-
-        // Authorize Trello
-        $rootScope.authorizeTrello();
-
-
 
 
   			if(!$scope.dealurl || ($scope.dealurl.indexOf(swiHighriseUrl) == -1 && $scope.dealurl.indexOf(itaHighriseUrl) == -1)){
@@ -71,6 +79,10 @@ angular.module('galimbertiCrmApp')
   				$scope.hrValidationMsg = "Non hai inserito il token Highrise per la società svizzera";
   			// valid path
   			else if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
+          $scope.dealCountry = "Svizzera";
+          $scope.dealCountryImg = "SWI";
+          
+
           var dealurl = $scope.dealurl
 
           // init highrise note
@@ -83,169 +95,229 @@ angular.module('galimbertiCrmApp')
             dealurl = dealurl.substring(0,dealurl.indexOf("/edit"));
 
           HighRiseDeal.get({dealurl: dealurl, token: $scope.hrtokenSwi},function(deal){
+            //console.log("Highrise deal",deal)
             $scope.hrdeal = deal;
-            HighRisePeople.get({country: 'SWI', token: $scope.hrtokenSwi},function(people){
-              $scope.managerOptions = [];
-              if(people.users && people.users.user && people.users.user.length){
-                var users = people.users.user;
-                users.forEach(function(d){
-                  $scope.managerOptions.push({id: d.id['$t'] , label: d.name}) ;
-                });
-                $scope.managerModel.id = deal.data.deal['responsible-party-id']['$t'];
-              }
 
-              HighRiseDealCategory.get({country: 'SWI' , dealurl: dealurl, token: $scope.hrtokenSwi},function(cats){
-                //console.log("Categories",cats);
-
-                $scope.jobTypeOptions = [];
-                if(cats['deal-categories'] && cats['deal-categories']['deal-category'] && cats['deal-categories']['deal-category'].length){
-                  var categories = cats['deal-categories']['deal-category'];
-                  categories.forEach(function(d){
-                    $scope.jobTypeOptions.push({id: d.id['$t'] , label: d.name}) ;
+            if(deal.data.deal){
+              HighRisePeople.get({country: 'SWI', token: $scope.hrtokenSwi},function(people){
+                $scope.managerOptions = [];
+                if(people.users && people.users.user && people.users.user.length){
+                  var users = people.users.user;
+                  users.forEach(function(d){
+                    $scope.managerOptions.push({id: d.id['$t'] , label: d.name}) ;
                   });
-                  $scope.jobTypeModel.id = deal.data.deal['category-id']['$t'];
+                  $scope.managerModel.id = deal.data.deal['responsible-party-id']['$t'];
                 }
 
-              });
+                HighRiseDealCategory.get({country: 'SWI' , dealurl: dealurl, token: $scope.hrtokenSwi},function(cats){
+                  //console.log("Categories",cats);
 
-              //console.log("hrdeals",$scope.hrdeal);
+                  $scope.jobTypeOptions = [];
+                  if(cats['deal-categories'] && cats['deal-categories']['deal-category'] && cats['deal-categories']['deal-category'].length){
+                    var categories = cats['deal-categories']['deal-category'];
+                    categories.forEach(function(d){
+                      $scope.jobTypeOptions.push({id: d.id['$t'] , label: d.name}) ;
+                    });
+                    $scope.jobTypeModel.id = deal.data.deal['category-id']['$t'];
+                  }
 
-              if($scope.hrdeal.data){
-                var dealId = $scope.hrdeal.data.deal.id['$t']
-                HighRiseNotes.get({dealurl: swiHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenSwi},
-                                   function(notes){
-                                      if(notes.data.notes && notes.data.notes.note)
-                                        $scope.hrnote = notes.data.notes.note.body;
+                });
+
+                //console.log("hrdeals",$scope.hrdeal);
+
+                if($scope.hrdeal.data){
+                  var dealId = $scope.hrdeal.data.deal.id['$t']
+                  HighRiseNotes.get({dealurl: swiHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenSwi},
+                                     function(notes){
+                                        //console.log("Notes",notes)
+                                        if(notes.data.notes && notes.data.notes.note){
+                                          $scope.hrnote = notes.data.notes.note.body;
+
+                                          var customFields = $scope.hrnote.split("\n");
+
+                                          $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
+                                          $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
+                                          $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
+                                          $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                          $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
+                                          $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+
+                                          $scope.setPositionMarker();
+                                        }
 
                                         var baseTrelloLink = "https://trello.com/c/";
-                                        if($scope.hrnote && $scope.hrnote.length >= baseTrelloLink.length + 8){
-                                          var cardId = $scope.hrnote.substring(baseTrelloLink.length,baseTrelloLink.length + 8)
-                                          
-                                          if(cardId)
-                                            // get grive folder from Trello
-                                            Trello.get("/cards/" + cardId)
-                                                  .then(function(card){
-                                                    //console.log("Card ", card);
-                                                    if(card.desc){
-                                                      var ordineVendita = "**Cartella Ordine Vendita**";
-                                                      var idxOrdineVendita = card.desc.indexOf(ordineVendita);
+                                        if($scope.trelloLink && $scope.trelloLink.length >= baseTrelloLink.length + 8){
+                                            var cardId = $scope.trelloLink.substring(baseTrelloLink.length,baseTrelloLink.length + 8)
+                                            if(cardId)
+                                              // get grive folder from Trello
+                                              Trello.get("/cards/" + cardId)
+                                                    .then(function(card){
+                                                      //console.log("Card ", card);
+                                                      if(card.desc){
+                                                        var ordineVendita = "**Cartella Ordine Vendita**";
+                                                        var idxOrdineVendita = card.desc.indexOf(ordineVendita);
 
-                                                      var calcoloPreventivo = "**Calcolo Preventivo e Contratto**"
-                                                      var idxCalcoloPreventivo = card.desc.indexOf(calcoloPreventivo);
+                                                        var calcoloPreventivo = "**Calcolo Preventivo e Contratto**"
+                                                        var idxCalcoloPreventivo = card.desc.indexOf(calcoloPreventivo);
 
-                                                      var dealHighrise = "**Deal Highrise**"
-                                                      var idxDealHighrise = card.desc.indexOf(dealHighrise);
-
-
-                                                      
-                                                      if(idxOrdineVendita != -1 && idxCalcoloPreventivo != -1)
-                                                        $scope.gdrivelink = card.desc.substring(ordineVendita.length,idxCalcoloPreventivo);
-
-                                                      if(idxCalcoloPreventivo != -1 && idxDealHighrise != -1)
-                                                        $scope.gdriveOrderLink = card.desc.substring(idxCalcoloPreventivo + calcoloPreventivo.length,idxDealHighrise);
+                                                        var dealHighrise = "**Deal Highrise**"
+                                                        var idxDealHighrise = card.desc.indexOf(dealHighrise);
 
 
-                                                      $scope.$digest();
-                                                    }
+                                                        
+                                                        if(idxOrdineVendita != -1 && idxCalcoloPreventivo != -1)
+                                                          $scope.gdrivelink = card.desc.substring(ordineVendita.length,idxCalcoloPreventivo);
+
+                                                        if(idxCalcoloPreventivo != -1 && idxDealHighrise != -1)
+                                                          $scope.gdriveOrderLink = card.desc.substring(idxCalcoloPreventivo + calcoloPreventivo.length,idxDealHighrise);
 
 
-
-                                                  });
-                                          
+                                                        $scope.$digest();
+                                                      }
+                                                    });
+                                            
                                         }
-                                        
+                                     });
+                    
+                      // TODO: create support request for additional info
+                      /*
+                      HighRiseCustomFields.get({dealurl: swiHighriseUrl + "/" + dealId + "/subject_datas", token: $scope.hrtokenSwi},
+                                                 function(subjectFields){
+                                                    console.log("Receive subject field",swiHighriseUrl + "/" + dealId + "/subject_datas",subjectFields)
+                                                 });
+                      */                                             
+                      
+                      $scope.hrValidationMsg = null;    
+                  }else{
+                    $scope.hrValidationMsg = "Deal invalido o non trovato";
+                    $scope.hrdeal = null;
+                  }
+                }); // end HighRisePeople.get
+
+                
+
+            } else{
+              $scope.hrValidationMsg = "Deal invalido o non trovato";
+              $scope.hrdeal = null;
+            }
 
 
-
-                                   });
-              }
-
-              $scope.hrValidationMsg = null;
-            })
           });
           
   			}
   			else if($scope.dealurl.indexOf(itaHighriseUrl) != -1){
           var dealurl = $scope.dealurl
+          $scope.dealCountry = "Italia";
+          $scope.dealCountryImg = "ITA";
           if(dealurl.indexOf("/edit") != -1)
             dealurl = dealurl.substring(0,dealurl.indexOf("/edit"));
 
   				
-          HighRiseDeal.get({dealurl: dealurl, token: $scope.hrtokenSwi},function(deal){
+          HighRiseDeal.get({dealurl: dealurl, token: $scope.hrtokenIta},function(deal){
             $scope.hrdeal = deal;
-            HighRisePeople.get({country: 'ITA', token: $scope.hrtokenSwi},function(people){
-              $scope.managerOptions = [];
-              if(people.users && people.users.user && people.users.user.length){
-                var users = people.users.user;
-                users.forEach(function(d){
-                  $scope.managerOptions.push({id: d.id['$t'] , label: d.name}) ;
-                });
-                $scope.managerModel.id = deal.data.deal['responsible-party-id']['$t'];
-              }
-
-              HighRiseDealCategory.get({country: 'ITA' , dealurl: dealurl, token: $scope.hrtokenSwi},function(cats){
-                //console.log("Categories",cats);
-
-                $scope.jobTypeOptions = [];
-                if(cats['deal-categories'] && cats['deal-categories']['deal-category'] && cats['deal-categories']['deal-category'].length){
-                  var categories = cats['deal-categories']['deal-category'];
-                  categories.forEach(function(d){
-                    $scope.jobTypeOptions.push({id: d.id['$t'] , label: d.name}) ;
+            if(!deal.data.deal){
+              $scope.hrValidationMsg = "Deal invalido o non trovato";
+              $scope.hrdeal = null;  
+              
+            } else
+              HighRisePeople.get({country: 'ITA', token: $scope.hrtokenIta},function(people){
+                $scope.managerOptions = [];
+                if(people.users && people.users.user && people.users.user.length){
+                  var users = people.users.user;
+                  users.forEach(function(d){
+                    $scope.managerOptions.push({id: d.id['$t'] , label: d.name}) ;
                   });
-                  $scope.jobTypeModel.id = deal.data.deal['category-id']['$t'];
+                  $scope.managerModel.id = deal.data.deal['responsible-party-id']['$t'];
                 }
 
-              });
+                HighRiseDealCategory.get({country: 'ITA' , dealurl: dealurl, token: $scope.hrtokenIta},function(cats){
+                  //console.log("Categories",cats);
 
-              //console.log("hrdeals",$scope.hrdeal);
+                  $scope.jobTypeOptions = [];
+                  if(cats['deal-categories'] && cats['deal-categories']['deal-category'] && cats['deal-categories']['deal-category'].length){
+                    var categories = cats['deal-categories']['deal-category'];
+                    categories.forEach(function(d){
+                      $scope.jobTypeOptions.push({id: d.id['$t'] , label: d.name}) ;
+                    });
+                    $scope.jobTypeModel.id = deal.data.deal['category-id']['$t'];
+                  }
 
-              if($scope.hrdeal.data){
-                var dealId = $scope.hrdeal.data.deal.id['$t']
-                HighRiseNotes.get({dealurl: itaHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenIta},
-                                   function(notes){
-                                      if(notes.data.notes && notes.data.notes.note)
-                                        $scope.hrnote = notes.data.notes.note.body;
+                });
 
-                                        var baseTrelloLink = "https://trello.com/c/";
-                                        if($scope.hrnote && $scope.hrnote.length >= baseTrelloLink.length + 8){
-                                          var cardId = $scope.hrnote.substring(baseTrelloLink.length,baseTrelloLink.length + 8)
-                                          
-                                          if(cardId)
-                                            // get grive folder from Trello
-                                            Trello.get("/cards/" + cardId)
-                                                  .then(function(card){
-                                                    //console.log("Card ", card);
-                                                    if(card.desc){
-                                                      var ordineVendita = "**Cartella Ordine Vendita**";
-                                                      var idxOrdineVendita = card.desc.indexOf(ordineVendita);
+                //console.log("hrdeals",$scope.hrdeal);
 
-                                                      var calcoloPreventivo = "**Calcolo Preventivo e Contratto**"
-                                                      var idxCalcoloPreventivo = card.desc.indexOf(calcoloPreventivo);
+                if($scope.hrdeal.data.deal){
+                  var dealId = $scope.hrdeal.data.deal.id['$t']
+                  HighRiseNotes.get({dealurl: itaHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenIta},
+                                     function(notes){
+                                        
+                                        //console.log("Notes",notes)
+                                        if(notes.data.notes && notes.data.notes.note){
+                                          $scope.hrnote = notes.data.notes.note.body;
 
-                                                      var dealHighrise = "**Deal Highrise**"
-                                                      var idxDealHighrise = card.desc.indexOf(dealHighrise);
-                                                      
-                                                      if(idxOrdineVendita != -1 && idxCalcoloPreventivo != -1)
-                                                        $scope.gdrivelink = card.desc.substring(ordineVendita.length,idxCalcoloPreventivo);
+                                          var customFields = $scope.hrnote.split("\n");
 
-                                                      if(idxCalcoloPreventivo != -1 && idxDealHighrise != -1)
-                                                        $scope.gdriveOrderLink = card.desc.substring(idxCalcoloPreventivo + calcoloPreventivo.length,idxDealHighrise);
+                                          $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
+                                          $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
+                                          $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
+                                          $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                          $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
+                                          $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
 
-                                                      $scope.$digest();
-                                                    }
-                                                  });
+                                          $scope.setPositionMarker();
                                         }
-                                   });
-              }
 
-              $scope.hrValidationMsg = null;
-            })
-          });
+                                          var baseTrelloLink = "https://trello.com/c/";
+                                          if($scope.trelloLink && $scope.trelloLink.length >= baseTrelloLink.length + 8){
+                                            var cardId = $scope.trelloLink.substring(baseTrelloLink.length,baseTrelloLink.length + 8)
+                                            
+                                            if(cardId)
+                                              // get grive folder from Trello
+                                              Trello.get("/cards/" + cardId)
+                                                    .then(function(card){
+                                                      //console.log("Card ", card);
+                                                      if(card.desc){
+                                                        var ordineVendita = "**Cartella Ordine Vendita**";
+                                                        var idxOrdineVendita = card.desc.indexOf(ordineVendita);
+
+                                                        var calcoloPreventivo = "**Calcolo Preventivo e Contratto**"
+                                                        var idxCalcoloPreventivo = card.desc.indexOf(calcoloPreventivo);
+
+                                                        var dealHighrise = "**Deal Highrise**"
+                                                        var idxDealHighrise = card.desc.indexOf(dealHighrise);
+                                                        
+                                                        if(idxOrdineVendita != -1 && idxCalcoloPreventivo != -1)
+                                                          $scope.gdrivelink = card.desc.substring(ordineVendita.length,idxCalcoloPreventivo);
+
+                                                        if(idxCalcoloPreventivo != -1 && idxDealHighrise != -1)
+                                                          $scope.gdriveOrderLink = card.desc.substring(idxCalcoloPreventivo + calcoloPreventivo.length,idxDealHighrise);
+
+                                                        $scope.$digest();
+                                                      }
+                                                    },function(err){
+                                                      console.log("Trello err get card",err)
+                                                    });
+                                          }
+
+                                     });
+                }
+
+                
+              })
+            });
   			}
   		}
 
+      $scope.invalidateDeal = function(){
+        $scope.hrdeal = null;
+        $scope.hrValidationMsg = "E' necessario validare il deal"
+      }
+
   		$scope.updateHRDeal = function(){
   			if($scope.hrdeal){
+
+
+
           var customer = $scope.hrdeal.data.deal.party.name;
           var dealId = $scope.hrdeal.data.deal.id['$t'];
   				var author;  
@@ -301,17 +373,21 @@ angular.module('galimbertiCrmApp')
               oldJobCategory = o.label;  
           })
 
-
+          //console.log("Update HR deal",hrd)
 
   				hrd.$update(function(res){
   					//console.log("Result",res);
   					$scope.hrdeal = res;
             $scope.resultDealName = res.data.deal.name;
 
+
+
             // Upsert Trello
             if(res && res.data.deal && country === "SWI"){
+              //console.log("Update Trello Card")
               upsertTrelloCard(res.data.deal.id['$t'], $scope.dealurl, res.data.deal.name,customer,oldJobCategory)
             }
+            // TODO: Upsert Trello for 'ITA'
 
   				})
 
@@ -322,32 +398,47 @@ angular.module('galimbertiCrmApp')
   		}
 
 
-      var updateHRNotes = function(dealId,trelloLink){
+      $scope.adjustResult = function(){
+        $scope.constructionSite = this.constructionSite;
+      }
+
+      var updateHRNotes = function(dealId,openHighrise){
         if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
                   HighRiseNotes.get({dealurl: swiHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenSwi},
                                     function(result){
                                       //console.log("Notes from Highrise",result.data.notes,result.data.notes.note);
 
+                                      var bodyText = "CantierePlaceId: "  + $scope.constructionSitePlaceId + "\n" +
+                                                     "Cantiere: "         + $scope.constructionSite + "\n" + 
+                                                     "Descrizione: "      + $scope.jobDescription + "\n" +
+                                                     "Link GDrive: "      + $scope.gdrivelink +  "\n" +
+                                                     "Link Gsheet: "      + $scope.gsheetlink +  "\n" +
+                                                     "Link Trello: "      + $scope.trelloLink;
+
+
+
                                       if(!result.data.notes.note){
                                         var note = new HighRiseNotes({ dealurl: swiHighriseUrl + "/" + dealId + "/notes", 
-                                                                       body: trelloLink, 
+                                                                       body: bodyText, 
                                                                        id: dealId,
                                                                        token: $scope.hrtokenSwi,
                                                                        country: 'SWI'});
                                         note.$save(function(savedNotes){
-                                          console.log("Saved Notes",savedNotes);
+                                          //console.log("Saved Notes",savedNotes);
                                         })
                                       }else{
 
                                         HighRiseNotes.update({ dealurl: swiHighriseUrl + "/" + dealId + "/notes" , 
-                                                               body: trelloLink, 
+                                                               body: bodyText, 
                                                                id: result.data.notes.note.id['$t'],
                                                                dealId: dealId,
                                                                token: $scope.hrtokenSwi,
                                                                country: 'SWI'
                                                             },
                                         function(updatedNote){
-                                          console.log("Note Updated",updatedNote);
+                                          reloadHRNotes(dealId,'SWI');
+                                          if(openHighrise)
+                                            $window.open('https://swissgalimbertisa.highrisehq.com/deals/' + $scope.hrdeal.data.deal.id['$t'], '_blank');
                                         })
                                       }
 
@@ -368,7 +459,7 @@ angular.module('galimbertiCrmApp')
                                                                 country: 'ITA'
                                                               });
                                   note.$save(function(savedNotes){
-                                          console.log("Saved Notes",savedNotes);
+                                          //console.log("Saved Notes",savedNotes);
                                         })
                                 }else{
                                   HighRiseNotes.update({dealurl: itaHighriseUrl + "/" + dealId + "/notes", 
@@ -377,37 +468,81 @@ angular.module('galimbertiCrmApp')
                                                         token: $scope.hrtokenIta,
                                                         country: 'ITA'},
                                   function(updatedNote){
-                                    console.log("Note Updated",updatedNote);
+                                    //console.log("Note Updated",updatedNote);
+                                    reloadHRNotes(dealId,'ITA');
                                   })
                                 }
                               });
         }
       }
 
+
+      
+      function reloadHRNotes(dealId,country){
+        var token = country === "SWI" ?  $scope.hrtokenSwi : (country === "ITA" ? $scope.hrtokenIta : null);
+        var url = country === "SWI" ?  swiHighriseUrl : (country === "ITA" ? itaHighriseUrl : null);
+
+
+        if(token && url)
+          HighRiseNotes.get({dealurl: url + "/" + dealId + "/notes", token: token},
+                                       function(notes){
+                                          //console.log("Notes",notes)
+                                          if(notes.data.notes && notes.data.notes.note){
+                                            $scope.hrnote = notes.data.notes.note.body;
+
+                                            var customFields = $scope.hrnote.split("\n");
+
+                                            $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
+                                            $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
+                                            $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
+                                            $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                            $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
+                                            $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+
+                                            $scope.setPositionMarker();
+                                          }
+                                        });
+      }
+
+      
+
+
+
       ///////////////////////////////////////////////////////////////////////////////////////////
       //                    GDRIVE Section                                                     //
       ///////////////////////////////////////////////////////////////////////////////////////////
-      var clientId="465342850022-uccefd9aoqoqum18ctcvg9vai1no554a.apps.googleusercontent.com";
-      var apiKey = "AIzaSyAggTg6GPKQt710bFV4RiUfByLlKR1BGjg";
-      var scopes = ["https://www.googleapis.com/auth/drive"];
-      var accessToken;
 
-      var PREV_PAVIMENTI_ID = "0B-mS2CSkk6pxaXl1TUd6R3hKWGM";
-      var PREV_OUTDOOR_ID   = "0B-mS2CSkk6pxfmVxMDJ3TU11b04xYmx4Zi1ibGc4aG9VTjNRdTVpTko5aVN6WG9NZ1VKQk0";
-      var PREV_CASE_ID      = "0B-mS2CSkk6pxfjFVd2JTUXFlRUljWThLX2loSWNVSnN4djJzamdIN3lxd25TOVlrRUlFMjA";
-      var PREV_TETTI_ID      = "0B-mS2CSkk6pxfnJWbFVBRGNmcldFYTdVNUE0cFNUdFNvRXdmTDhnaE9ka2s1Zy10WjdPVDQ";
+      // TODO: remove
+      //var clientId="465342850022-uccefd9aoqoqum18ctcvg9vai1no554a.apps.googleusercontent.com";
+      //var apiKey = "AIzaSyAggTg6GPKQt710bFV4RiUfByLlKR1BGjg";
+      //var scopes = ["https://www.googleapis.com/auth/drive"];
+      //var accessToken;
+      $rootScope.googleSignInObject;
 
+      /*  TODO: remove
+      var PREV_PAVIMENTI_ID_15  = "0B-mS2CSkk6pxaXl1TUd6R3hKWGM";
+      var PREV_OUTDOOR_ID_15    = "0B-mS2CSkk6pxfmVxMDJ3TU11b04xYmx4Zi1ibGc4aG9VTjNRdTVpTko5aVN6WG9NZ1VKQk0";
+      var PREV_CASE_ID_15       = "0B-mS2CSkk6pxfjFVd2JTUXFlRUljWThLX2loSWNVSnN4djJzamdIN3lxd25TOVlrRUlFMjA";
+      var PREV_TETTI_ID_15      = "0B-mS2CSkk6pxfnJWbFVBRGNmcldFYTdVNUE0cFNUdFNvRXdmTDhnaE9ka2s1Zy10WjdPVDQ";*/
+
+       
+      var TETTI_ID      = "0B-mS2CSkk6pxTDk3WUZPRnZ3Rzg"; 
+      var PAVIMENTI_ID  = "0B-mS2CSkk6pxVENtSTFUbFpfRG8";
+      var OUTDOOR_ID    = "0B-mS2CSkk6pxREJzRGZraTF0aW8";
+      var CASE_ID       = "0B-mS2CSkk6pxUndETlNzYVhwa3M";
+      
+       
 
       var gdriveFolders;
 
-      var folders = [{title: 'CH - Preventivi Tetti 2015' ,     fileId: PREV_TETTI_ID,        label: 'TETTI' },
-                     {title: 'CH - Preventivi Pavimenti 2015',  fileId: PREV_PAVIMENTI_ID,    label: 'PARQUET' },
-                     {title: 'CH - Preventivi Outdoor 2015' ,   fileId: PREV_OUTDOOR_ID,      label: 'OUTDOOR' },
-                     {title: 'CH - Preventivi Case 2015'    ,   fileId: PREV_CASE_ID,         label: 'COSTRUZIONI' }
+      var folders = [{title: 'CH - Preventivi Tetti'    ,  fileId: TETTI_ID,        label: 'TETTI'      },
+                     {title: 'CH - Preventivi Pavimenti',  fileId: PAVIMENTI_ID,    label: 'PARQUET'     },
+                     {title: 'CH - Preventivi Outdoor'  ,  fileId: OUTDOOR_ID,      label: 'OUTDOOR'     },
+                     {title: 'CH - Preventivi Case'     ,  fileId: CASE_ID,         label: 'COSTRUZIONI' }
                     ];
 
       
-      var folderTitles = [ {title: "0-9"},
+      var folderTitles = [{title: "0-9"},
                           {title: "A"},
                           {title: "B"},
                           {title: "C-CK"},
@@ -431,45 +566,77 @@ angular.module('galimbertiCrmApp')
       $rootScope.gDriveLogin=function() {
         $timeout(function(){
                               gapi.client.setApiKey(apiKey);
+                              gapi.load('auth2', function() {
+                                gapi.auth2.init({client_id: clientId});
+                              });
                               gapi.client.load('drive', 'v2').then(checkAuth);
                             },100);
       };
 
-      function checkAuth() {
-        //console.log("CheckAuth")
-        gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
+      
+     
+
+      var checkGDriveFolders = function(customer,dealId,title){
+        var currentYear = new Date().getFullYear();
+        var previousYear = currentYear - 1;
+
+
+        var request = gapi.client.request({
+                                              'path': '/drive/v2/files',
+                                              'method': 'GET',
+                                              'params': {
+                                                  'maxResults': '100',
+                                                  'q': "mimeType = 'application/vnd.google-apps.folder' and title contains  '" + dealId + "'" //and '" + fld.fileId + "' in parents",
+
+                                               }
+                                          });
+
+        request.then(function(resp){
+          if(resp.result.items && resp.result.items.length){
+            var itemFound;
+            for(var i=0; i < resp.result.items.length; i++){
+              var item = resp.result.items[i];
+              if(!item.explicitlyTrashed && item.parents.length){
+                itemFound = item;
+                break;
+              }
+            }
+            if(itemFound){
+              var parRequest = gapi.client.drive.files.get({
+                                                              'fileId': itemFound.parents[0].id
+                                                            });
+              parRequest.then(function(resp){
+                if(resp.result && resp.result.parents.length){
+                  var parentRootRequest = gapi.client.drive.files.get({
+                                                              'fileId': resp.result.parents[0].id
+                                                            }); 
+                  parentRootRequest.then(function(response){
+                    if(response.result.title.indexOf(currentYear) != -1)
+                      return verifyFoldersThenMoveOrCopy(customer,dealId,title,currentYear); 
+                    else if(response.result.title.indexOf(previousYear) != -1)
+                      return  verifyFoldersThenMoveOrCopy(customer,dealId,title,previousYear); 
+                  });
+                  
+
+                }
+              })
+            }
+            else{
+              return  verifyFoldersThenMoveOrCopy(customer,dealId,title,currentYear);
+            }
+          }
+        });
+
+
+
       }
-      //$interval(checkAuth, 2000);
-
-      function handleAuthResult(authResult) {
-
-        var authorizeButton = document.getElementById('authorize-button');
-        if (authResult && !authResult.error) {
-          //console.log(authResult, authResult.access_token);
-          accessToken = authResult.access_token;
-          //authorizeButton.style.visibility = 'hidden';
-          populateFolders();
-          $scope.$apply(function() { $scope.gdriveLoggedin = true} );
-          
-        } else {
-          //authorizeButton.style.visibility = '';
-          authorizeButton.onclick = handleAuthClick;
-        }
-      }
-
-      function handleAuthClick(event) {
-        gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
-        return false;
-      }
-
 
       
 
 
-      var checkGDriveFolders = function(customer,dealId,title){
-        //console.log("Customer",customer)
-        //console.log("hrDeal",$scope.hrdeal)
-        //console.log("Category",$scope.jobTypeModel,$scope.jobTypeOptions)
+      var verifyFoldersThenMoveOrCopy = function(customer,dealId,title,year){
+        //console.log("verifyFoldersThenMoveOrCopy",customer,dealId,title,year)
+        /* search folder destination for deal */
         var categoryLabel;
 
         $scope.jobTypeOptions.forEach(function(jt){
@@ -477,76 +644,139 @@ angular.module('galimbertiCrmApp')
             categoryLabel = jt.label;
         })
 
-        //console.log("Set Category to ",categoryLabel)
+        
 
         // Folder containing updated deal
         var selectedFolder;
         folders.forEach(function(f){
-          if(f.label === categoryLabel)
+          if(f.label.toLowerCase() === categoryLabel.toLowerCase())
             selectedFolder = f;
         });
+
+        
 
         if(!selectedFolder)
           selectedFolder = folders[0];
 
-        //console.log("Use folder",selectedFolder,gdriveFolders[selectedFolder.fileId])
 
-        var gdriveItems;
-        if(gdriveFolders[selectedFolder.fileId] && gdriveFolders[selectedFolder.fileId].result)
-          gdriveItems = gdriveFolders[selectedFolder.fileId].result.items
-        if(customer && gdriveItems && gdriveItems.length){
+        var currentYearFolder  = selectedFolder.title + " " + year;
+        //var previousYearFolder = "CH - Preventivi " + selectedFolder.label + " " + previousYear;
 
-          var beginChar = customer.toUpperCase().charAt(0);
-          for(var i=0; i < gdriveItems.length; i++){
-            if(gdriveItems[i].title.indexOf(beginChar) != -1 && !gdriveItems[i].explicitlyTrashed){
-              //console.log("set new folder to ",gdriveItems[i])
+        var req = gapi.client.request({
+                                            'path': '/drive/v2/files',
+                                            'method': 'GET',
+                                            'params': {
+                                                'maxResults': '100',
+                                                'q': "mimeType = 'application/vnd.google-apps.folder' and title =  '" + currentYearFolder + "'" //and '" + fld.fileId + "' in parents",
 
-              // TODO: use folder parent
-              var request = gapi.client.drive.files.list({
-                'maxResults': '5000',
-                'q': "mimeType = 'application/vnd.google-apps.folder'" //and title =  '" + gdriveItems[i].title + "'"
-              });
-              request
-                .then(function(resp){
-                  //console.log("GDrive folders",resp)
+                                             }
+                                    });
+
+        /*                                              */
+        /* load folder for currentYear                  */
+        /*                                              */
+        req.then(function(response){
+          return response.result.items[0];
+        }).then(function(parentFolder){
+
+          var folderListReq = gapi.client.request({
+                                            'path': '/drive/v2/files',
+                                            'method': 'GET',
+                                            'params': {
+                                                'maxResults': '100',
+                                                'q': "mimeType = 'application/vnd.google-apps.folder' and '" + parentFolder.id + "' in parents",
+
+                                             }
+                                    }); 
+
+          folderListReq.then(function(fresult){
+            //console.log("Folder List",fresult);
+            if(fresult.result && fresult.result.items.length > 0){
+              var gdriveItems = fresult.result.items;
+              
+              var beginChar;
+              
+
+              if(!isNaN(parseInt(customer.charAt(0))))
+                beginChar = "0";
+              else if(customer.toUpperCase().substring(0,2) >= 'C' && customer.toUpperCase().substring(0,2) <= 'CI'){
+                //console.log("customer.toUpperCase().substring(0,2)",customer.toUpperCase().substring(0,2))
+                beginChar = "C-";
+              }
+              else if(customer.toUpperCase().substring(0,2) > 'CI' && customer.toUpperCase().substring(0,2) <= 'CZ')
+                beginChar = "CL";
+              else if(customer.toUpperCase().charAt(0) == 'F' || customer.toUpperCase().charAt(0) == 'G')
+                beginChar = "F";
+              else if(customer.toUpperCase().charAt(0) == 'H' || customer.toUpperCase().charAt(0) == 'I' || customer.toUpperCase().charAt(0) == 'J' || customer.toUpperCase().charAt(0) == 'K' || customer.toUpperCase().charAt(0) == 'L')
+                beginChar = "H";
+              else if(customer.toUpperCase().charAt(0) == 'N' || customer.toUpperCase().charAt(0) == 'O')
+                beginChar = "N";
+               else if(customer.toUpperCase().charAt(0) == 'P' || customer.toUpperCase().charAt(0) == 'Q')
+                beginChar = "P";
+              else if(customer.toUpperCase().charAt(0) == 'U' || customer.toUpperCase().charAt(0) == 'V' || customer.toUpperCase().charAt(0) == 'W' || customer.toUpperCase().charAt(0) == 'Y' || customer.toUpperCase().charAt(0) == 'Z')
+                beginChar = "U";
 
 
-                  //console.log("resp",resp.result.items.length);
-                  if(resp.result.items && resp.result.items.length){
-                    var files = resp.result.items;
-                    //console.log("Files",files);
-                    for(var j=0; j < files.length; j++){
-                      //console.log(files[j].title,dealId);
-                      if(files[j].title.indexOf(dealId) != -1 && !files[j].explicitlyTrashed){
-                        //console.log("found file",files[j]);
-                        return files[j];
-                      }
-                    }
+              /*                                              */
+              /* find folder for deal                         */
+              /*                                              */
+
+              if(beginChar)
+                for(var i=0; i < gdriveItems.length; i++){
+                  if(gdriveItems[i].title.indexOf(beginChar) != -1 && !gdriveItems[i].explicitlyTrashed ){
+                    //console.log("set new folder to ",gdriveItems[i])
+                    /*                                    */
+                    /* check if folder for deal exist     */
+                    /*                                    */
+                    moveOrCopyGoogleFolder(dealId,gdriveItems[i],title);
+                    return;
                   }
-                },function(err){ console.log("Error",err)})
-                .then(function(file){
-                    var newgfolder;
-                    if(selectedFolder && gdriveFolders[selectedFolder.fileId]){
-                      var gfolders = gdriveFolders[selectedFolder.fileId].result.items;
+                }
+              else
+                console.log("Cannot find associated folder for customer",customer);
+            }
 
-                      var beginChar = customer.toUpperCase().charAt(0);
-                      for(var i=0; i < gdriveItems.length; i++){
-                        if(gfolders[i].title.indexOf(beginChar) != -1 && !gfolders[i].explicitlyTrashed){
-                          newgfolder = gfolders[i];
-                          break;
-                        }
-                      }
-                    }
+          });
+            
+        });
 
-                    if(file && newgfolder){
+
+      }
+
+      function moveOrCopyGoogleFolder(dealId,destinationFolder,title){
+        var currentYear = new Date().getFullYear();
+        var previousYear = currentYear - 1;
+
+
+        var request = gapi.client.request({
+                                              'path': '/drive/v2/files',
+                                              'method': 'GET',
+                                              'params': {
+                                                  'maxResults': '100',
+                                                  'q': "mimeType = 'application/vnd.google-apps.folder' and title contains  '" + dealId + "'" //and '" + fld.fileId + "' in parents",
+
+                                               }
+                                          });
+
+        request.then(function(resp){
+          if(resp.result.items && resp.result.items.length){
+            var itemFound;
+            for(var i=0; i < resp.result.items.length; i++){
+              var item = resp.result.items[i];
+              if(!item.explicitlyTrashed && item.parents.length){
+                itemFound = item;
+                break;
+              }
+            }
+            if(itemFound){
+              if(itemFound.parents[0].id !== destinationFolder.id){
+                      //console.log("Move folder in " ,destinationFolder); 
                       
+                      var file = itemFound;
                       var removeParents = [];
-                      if(parent && file.parents.length)
+                      if(file.parents.length)
                         file.parents.forEach(function(p){
-                          if(p.id === parent)
-                            parent = null;
-                          else
-                            removeParents.push(p.id);
+                          removeParents.push(p.id);
                         })
                       
 
@@ -556,59 +786,33 @@ angular.module('galimbertiCrmApp')
                       //body.addParents = newgfolder.id;
                       //body.removeParents = removeParents.join();
 
-                    
-
-
-                      
                       var updRequest = gapi.client.drive.files.patch({
                             'fileId': file.id,
                             'resource': body,
-                            'addParents': newgfolder.id, 
+                            'addParents': destinationFolder.id, 
                             'removeParents': removeParents.join()
                           });
-                      updRequest.execute(function(resp) {
-                        console.log('Updated gdrive folder with new title', resp);
-
-                        //updateTrelloLinks();
-
-                        
-                        
-
+                      updRequest.execute(function(upd) {
+                        //console.log('Updated gdrive folder with new title', upd);
+                        $scope.redirectToHighriseDeal();
                       });
-                    }else if(newgfolder){
-                      //console.log("copyTemplateFiles",newgfolder);
-                      $scope.copyTemplateFiles(newgfolder.id,title);
+                      
 
-                    }
-                })
-              break;
+              }
+              else{
+                //console.log("Don't move anything"); 
+                $scope.redirectToHighriseDeal();
+              }
+                 
+            }
+            else{
+              //console.log("Create folder for deal" , dealId);
+              $scope.copyTemplateFiles(destinationFolder.id,title);
             }
           }
-        }
+        });
+
         
-      }
-
-
-      function retrieveAllFilesInFolder(folderId, callback) {
-        var retrievePageOfChildren = function(request, result) {
-          request.execute(function(resp) {
-            result = result.concat(resp.items);
-            var nextPageToken = resp.nextPageToken;
-            if (nextPageToken) {
-              request = gapi.client.drive.children.list({
-                'folderId' : folderId,
-                'pageToken': nextPageToken
-              });
-              retrievePageOfChildren(request, result);
-            } else {
-              callback(result);
-            }
-          });
-        }
-        var initialRequest = gapi.client.drive.children.list({
-            'folderId' : folderId
-          });
-        retrievePageOfChildren(initialRequest, []);
       }
 
       var populateFolders = function(){
@@ -627,6 +831,7 @@ angular.module('galimbertiCrmApp')
           }
         })
       }
+      
 
 
       var setDealFoldersId = function(fld){
@@ -679,9 +884,11 @@ angular.module('galimbertiCrmApp')
         gapi.client.drive.files.insert({'resource': data}).execute(
                                           function(result){ 
                                             if(result.title === $scope.updDealName){
-                                              console.log("Update Trello Link from gapi insert",result);
+                                              //console.log("Update Trello Link from gapi insert",result);
                                               $scope.trelloDescLink1 = "https://drive.google.com/drive/folders/" + result.id + "\n\n";
+                                              $scope.gdrivelink = "https://drive.google.com/drive/folders/" + result.id + "\n";
                                               updateTrelloLinks();
+                                              updateHRNotes($scope.hrdeal.data.deal.id['$t'],false);
                                             }
 
                                             //console.log("Folder Created",result);
@@ -752,8 +959,11 @@ angular.module('galimbertiCrmApp')
                                                       if(resp.title === "Preventivo e Ordine 2.0")
                                                       {
                                                         $scope.trelloDescLink2 = "https://docs.google.com/spreadsheets/d/" + resp.id + "/edit\n\n";
-                                                        console.log("Update Trello Link from file copy");
-                                                        updateTrelloLinks()
+                                                        $scope.gsheetlink = "https://docs.google.com/spreadsheets/d/" + resp.id + "/edit\n";
+                                                        //console.log("Update Trello Link from file copy");
+                                                        updateTrelloLinks();
+                                                        updateHRNotes($scope.hrdeal.data.deal.id['$t'],true);
+                                                        
                                                       }
                                                       // update trello card with link
                                                     }
@@ -765,7 +975,7 @@ angular.module('galimbertiCrmApp')
                                         }));
 
                             });
-                            //.then(function(){ console.log("Finished copy gdrive");}); // finish $q.all;
+                            
       };
 
 
@@ -808,6 +1018,8 @@ angular.module('galimbertiCrmApp')
 
       
       var upsertTrelloCard = function(dealId, dealUrl,cardTitle,customer,oldCardCategory){
+        
+
         $rootScope.authorizeTrello();
 
         var oldTrelloList = tettiListPreventiviDaFareId;
@@ -821,13 +1033,12 @@ angular.module('galimbertiCrmApp')
           oldTrelloList = floorListPreventiviDaFareId;
 
         if(oldCardCategory && oldCardCategory !== $scope.hrdeal.data.deal.category.name){
-          // delete card if exists
-          
-          
+          //console.log("Old Category changed");
           //console.log("Remove card from old list",oldTrelloList);
-
+          // delete card if exists
           Trello.get("/lists/" + oldTrelloList + "/cards") 
                 .then(function(cardList){
+                  console.log("Card List",cardList)
                   if(cardList && cardList.length)
                     for(var i=0; i < cardList.length; i++){
                       if(cardList[i].name.indexOf(dealId) != -1){
@@ -848,7 +1059,7 @@ angular.module('galimbertiCrmApp')
                             generateTrelloCard(dealId, dealUrl,cardTitle,customer,card.desc);
                           })
                   }else{
-                    console.log("Create new Trello Card");
+                    //console.log("Create new Trello Card");
                     generateTrelloCard(dealId, dealUrl,cardTitle,customer);
                   }
                 });
@@ -869,6 +1080,7 @@ angular.module('galimbertiCrmApp')
                 })
                 .then(function(card){ 
                   if(card){
+                    //console.log("Card exists",card)
                     generateTrelloCard(dealId, dealUrl,cardTitle,customer,card.desc);
                   }else{
                     generateTrelloCard(dealId, dealUrl,cardTitle,customer);
@@ -939,15 +1151,38 @@ angular.module('galimbertiCrmApp')
                           $scope.trelloDescRow3  +
                           $scope.trelloDescLink3 +
                           $scope.trelloDescRowsBottom;
-
               
               if(card){
-                //console.log("checkGDriveFolders and update card")
-                checkGDriveFolders(customer,dealId,$scope.updDealName);
+                $scope.trelloLink = card.url;
+                
+                var token = $scope.dealCountry === "Svizzera" ?  $scope.hrtokenSwi : ($scope.dealCountry === "Italia" ? $scope.hrtokenIta : null);
+                var url   = $scope.dealCountry === "Svizzera" ?  swiHighriseUrl : ($scope.dealCountry === "Italia" ? itaHighriseUrl : null);
 
+
+                if(token && url)
+                  HighRiseNotes.get({dealurl: url + "/" + dealId + "/notes", token: token},
+                                               function(notes){
+                                                  //console.log("Notes",notes)
+                                                  if(notes.data.notes && notes.data.notes.note){
+                                                    $scope.hrnote = notes.data.notes.note.body;
+
+                                                    var customFields = $scope.hrnote.split("\n");
+
+                                                    $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
+                                                    $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
+                                                    $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
+                                                    $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                                    $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
+                                                    //$scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+
+                                                    //console.log("Upd trello card",$scope.gsheetlink)
+
+                                                    updateHRNotes(dealId,false); // update highrise note and open deal in highrise
+                                                    checkGDriveFolders(customer,dealId,$scope.updDealName);
+                                                  }
+                                                });
               }
               else{
-                
                 // Template Card
                 Trello.get("/cards/" + templateCardId)
                   .then(function(tcard){
@@ -962,17 +1197,43 @@ angular.module('galimbertiCrmApp')
 
                         };
 
-                        console.log("Create new card",newCard);
+                        //console.log("Create new card",newCard);
 
                        Trello.post("/cards",newCard,function(result){
-                        console.log("Card Created Successfully - now update Highrise",result);
+                        //console.log("Card Created Successfully - now update Highrise",result);
+                        $scope.trelloLink = result.url;
+                        console.log("Create trello card",$scope.gsheetlink)
 
 
-                        // Update HighriseNotes
-                        updateHRNotes(dealId,result.url)
+                        var token = $scope.dealCountry === "Svizzera" ?  $scope.hrtokenSwi : ($scope.dealCountry === "Italia" ? $scope.hrtokenIta : null);
+                        var url   = $scope.dealCountry === "Svizzera" ?  swiHighriseUrl : ($scope.dealCountry === "Italia" ? itaHighriseUrl : null);
+
+
+                        if(token && url)
+                          HighRiseNotes.get({dealurl: url + "/" + dealId + "/notes", token: token},
+                                                       function(notes){
+                                                          console.log("Notes",notes)
+                                                          if(notes.data.notes && notes.data.notes.note){
+                                                            $scope.hrnote = notes.data.notes.note.body;
+
+                                                            var customFields = $scope.hrnote.split("\n");
+
+                                                            $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
+                                                            $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
+                                                            $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
+                                                            $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                                            $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
+                                                            //$scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+
+                                                            // Update HighriseNotes
+                                                            updateHRNotes(dealId,false)
+                                                            
+                                                            // verifica le cartelle in GDrive
+                                                            checkGDriveFolders(customer,dealId,$scope.updDealName);
+                                                          }
+                                                        });
+
                         
-                        // verifica le cartelle in GDrive
-                        checkGDriveFolders(customer,dealId,$scope.updDealName);
                        })
                     }
 
@@ -1014,7 +1275,7 @@ angular.module('galimbertiCrmApp')
 
           Trello.get("/lists/" + listPreventiviDaFareId + "/cards") 
                             .then(function(cardList){
-                              console.log("CardList preventivi da fare",cardList)
+                              //console.log("CardList preventivi da fare",cardList)
                               if(cardList && cardList.length)
                                 for(var i=0; i < cardList.length; i++){
                                   if(cardList[i].name.indexOf(dealId) != -1){
@@ -1038,7 +1299,7 @@ angular.module('galimbertiCrmApp')
                               if(card){
                                 //console.log("Card Desc",desc)
                                 Trello.put("/cards/" + card.id, {desc: desc},function(response){
-                                    console.log("Update with new links",response);
+                                    //console.log("Update with new links",response);
                                   });
 
                               }
@@ -1051,6 +1312,172 @@ angular.module('galimbertiCrmApp')
       }
 
 
+      $scope.goMainGa = function(){
+        $state.go("mainga");
+      }
+
+      $scope.storeSwissHighriseToken = function(){
+        $rootScope.tokenSwi = localStorageService.get('hrtokenSwi');
+        
+        $scope.modalInstance = $modal.open({
+                templateUrl: 'components/modal/authorize-swi-highrise-modal.html',
+                scope: $scope,
+                size: 'md'
+          }); 
+      }
+
+      $scope.storeItaHighriseToken = function(){
+        $rootScope.tokenIta = localStorageService.get('hrtokenIta');
+        
+        $scope.modalInstance = $modal.open({
+                templateUrl: 'components/modal/authorize-ita-highrise-modal.html',
+                scope: $scope,
+                size: 'md'
+          }); 
+      }
+
+      $scope.saveHighriseTokens = function(country){
+          //console.log("Save country token ",country)
+          if(country === 'ITA')  
+            localStorageService.set('hrtokenIta', this.tokenIta);
+          else if(country === 'SWI')  
+            localStorageService.set('hrtokenSwi', this.tokenSwi);
+
+          if($scope.modalInstance)
+            $scope.modalInstance.dismiss();
+      }
+
+      var authenticationSuccess = function() { 
+                                  Trello.get("/tokens/" + Trello.token() + "/member/fullName",function(res){
+                                      $rootScope.trelloToken = Trello.token();
+                                      $rootScope.trelloFullName = res._value;  
+                                      $scope.$digest();                                    
+                                  })
+                                }; 
+
+      var authenticationFailure = function() { console.log("Failed authentication"); };
+
+      $rootScope.authorizeTrello = function(){
+        //console.log("authorize trello")
+        Trello.authorize({
+          type: "popup",
+          name: "Automazione CRM - Galimberti",
+          scope: {
+            read: true,
+            write: true 
+          },
+          expiration: "never",
+          success:  authenticationSuccess,
+          error:    authenticationFailure
+        });
+      }
+      $rootScope.authorizeTrello();
+
+      
+      $scope.logoutTrello = function(){ 
+        Trello.deauthorize();
+        location.reload();
+      }
+
+
+      $scope.setPositionMarker = function(){
+
+        if($scope.constructionSitePlaceId){
+          var geocoder = new google.maps.Geocoder;
+          geocoder.geocode({'placeId': $scope.constructionSitePlaceId}, function(results, status) {
+            if (status === google.maps.GeocoderStatus.OK) {
+              if(results[0]){
+                if(results[0].geometry.viewport) {
+                  map.fitBounds(results[0].geometry.viewport);
+                } else {
+                  map.setZoom(17);
+                  map.setCenter(results[0].geometry.location);
+                  
+                } 
+
+                marker.setPosition(results[0].geometry.location);
+                marker.setVisible(true);
+
+                infowindow.setContent($scope.constructionSite);
+                infowindow.open(map, marker);
+              }
+            } else {
+              console.log('Geocoder failed due to: ' , status);
+            }
+          });
+        }
+      }
+
+
+      $scope.redirectToHighriseDeal = function(){
+        if($scope.hrdeal && $scope.hrdeal.data.deal.id['$t'])
+          $window.open('https://swissgalimbertisa.highrisehq.com/deals/' + $scope.hrdeal.data.deal.id['$t'], '_blank');
+      };
+
+      $scope.redirectToTrelloCard = function(){
+        var token = $scope.dealCountry === "Svizzera" ?  $scope.hrtokenSwi : ($scope.dealCountry === "Italia" ? $scope.hrtokenIta : null);
+        var url = $scope.dealCountry === "Svizzera" ?  swiHighriseUrl : ($scope.dealCountry === "Italia" ? itaHighriseUrl : null);
+
+
+        if($scope.hrdeal && $scope.hrdeal.data.deal.id['$t'] && token && url)
+          HighRiseNotes.get({dealurl: url + "/" + $scope.hrdeal.data.deal.id['$t'] + "/notes", token: token},
+                                       function(notes){
+                                          //console.log("Notes",notes)
+                                          if(notes.data.notes && notes.data.notes.note){
+                                            $scope.hrnote = notes.data.notes.note.body;
+
+                                            var customFields = $scope.hrnote.split("\n");
+
+                                            $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
+                                            $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
+                                            $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
+                                            $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                            $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
+                                            $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+
+                                            if($scope.trelloLink)
+                                              $window.open($scope.trelloLink, '_blank');
+                                          }
+                                        });
+
+
+        
+      };
+      
+      $scope.redirectClient3Importa = function(){
+        if($scope.hrdeal && $scope.hrdeal.data.deal.id['$t'])
+          $window.open('https://groups.google.com/a/galimberti.eu/forum/#!searchin/clienti3importa/' + $scope.hrdeal.data.deal.id['$t'], '_blank');
+      };
+
+      $scope.composeNewMail = function(){
+        var token = $scope.dealCountry === "Svizzera" ?  $scope.hrtokenSwi : ($scope.dealCountry === "Italia" ? $scope.hrtokenIta : null);
+        var url = $scope.dealCountry === "Svizzera" ?  swiHighriseUrl : ($scope.dealCountry === "Italia" ? itaHighriseUrl : null);
+
+        HighRiseNotes.get({dealurl: url + "/" + $scope.hrdeal.data.deal.id['$t'] + "/notes", token: token},
+                                       function(notes){
+                                          //console.log("Notes",notes)
+                                          if(notes.data.notes && notes.data.notes.note){
+                                            $scope.hrnote = notes.data.notes.note.body;
+
+                                            var customFields = $scope.hrnote.split("\n");
+
+                                            $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
+                                            $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
+                                            $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
+                                            $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                            $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
+                                            $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+
+                                            if($scope.trelloLink){
+                                              var tlink = "%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A" + $scope.trelloLink
+
+                                              $window.open("https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1&su=" + $scope.jobDescription + "&body=" + tlink + "&shva=1", '_blank');
+                                            }
+                                          }
+                                        });
+
+        
+      }
 
 
   });

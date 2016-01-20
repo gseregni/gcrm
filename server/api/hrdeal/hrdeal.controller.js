@@ -16,7 +16,7 @@ var parser = require('xml2json');
 exports.deal = function(req, res) {
   
   var reqparam = req.query;
-
+  console.log("parsedData",reqparam.dealurl)
   var options = {
   					 headers:{"Accept":"application/xml"},
   					 user:  reqparam.token, 
@@ -26,11 +26,11 @@ exports.deal = function(req, res) {
 
   	
   var apireq = client.get(reqparam.dealurl + ".xml", options, function(data, response){
-		var jsonData = parser.toJson(data);
-		var parsedData = data ? JSON.parse(jsonData) : null;
-		//console.log("parsedData",parsedData)
-
-        res.json({ data: parsedData});
+      var jsonData = parser.toJson(data);
+    	var parsedData = data ? JSON.parse(jsonData) : null;
+    		
+      res.json({ data: parsedData});
+      
 	});
 
 

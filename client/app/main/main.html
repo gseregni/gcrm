@@ -1,149 +1,241 @@
-<div ng-include="'components/navbar/navbar.html'"></div>
+    <!-- Google Services -->
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
 
-<header class="hero-unit" id="banner">
-  <div class="container">
-    <h1>Galimberti CRM</h1>
-    <p class="lead">Beta</p>
-    <img src="assets/images/logo.png" alt="I'm Querior">
-  </div>
-</header>
+    <div class="p-y-lg section section-fill-height section-opaque-dark">
+        <div class="background-image" style="background-image : url('assets/images/corteccia.jpg')"></div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h1 class="text-center text-muted">Automazione CRM - Galimberti</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    
+                        
+                    <div class="p-y row">
+                        <div class="col-lg-3">
+                            <a href="#" class="btn btn-warning-outline" ng-click="storeItaHighriseToken()">Token Highrise IT</a>
+                        </div>
+                        <div class="col-lg-3 ">
+                            <a href="#" class="btn btn-warning-outline" ng-click="storeSwissHighriseToken()">Token Highrise CH</a>
+                        </div>
+                        <div class="col-lg-3 ">
+                            <a href="#" class="btn btn-warning-outline" ng-click="authorizeTrello()" ng-hide="trelloToken" >Login to Trello</a>
+                            <a href="#" class="btn btn-warning-outline" ng-click="logoutTrello()" ng-show="trelloToken" >Trello: {{trelloFullName}}</a>
+                        </div>
+
+
+                        <div class="col-lg-3">
+                            <!--
+                            <a href="#" class="btn btn-warning-outline" ng-click="gDriveLogin()" ng-show="!googleSignInObject">Login to Gdrive</a>
+                            -->
+
+
+                            <div class="btn btn-warning-outline g-signin2" data-onsuccess="onSignIn"></div>
+
+                            <a href="#" class="btn btn-warning-outline" ng-click="gDriveLogout()" ng-hide="!googleSignInObject">Google Drive: {{googleSignInObject.wc.hg}} - Logout</a>
+                            
+
+                            <span id="signin" ng-show="immediateFailed">
+                              <span id="myGsignin"></span>
+                            </span>
+
+                            
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-6 col-lg-offset-3">
+                            <form class="m-y text-center">
+                                <fieldset class="form-group text-inverse" style="text-align: left;">
+                                    <label for="highriseLink" >Link Highrise</label>
+                                    <input type="text" class="form-control" id="highriseLink" ng-model="dealurl" placeholder="Paste link" ng-change="invalidateDeal()">
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="col-lg-3 ">
+                            <h2>&nbsp;</h2>
+                            <a href="#" class="btn btn-warning-outline" ng-disabled="!trelloToken && !googleSignInObject && (!tokenSwi || !tokenIta)" ng-click="getHighRiseDeal()">Verifica Link</a>
+                        </div>
+                        
+                        <div class="col-lg-6 col-lg-offset-3">
+                          <h4 class="p-y text-danger text-left">
+                              {{hrValidationMsg}}
+                          </h4>
+                        </div>
+
+
+                    </div>
+
+                    <div class="row" ng-hide="!hrdeal.data.deal || hrValidationMsg">
+                        <div class="col-lg-9 col-lg-offset-3">
+                            <h4 class="text-inverse text-left">&nbsp;</h4>
+                            <h4 class="p-y text-danger text-left">
+                              <img src="assets/images/{{dealCountryImg}}.png" alt="{{dealCountry}}">  Deal della società {{dealCountry === 'Italia' ? 'Italiana' : dealCountry }}
+                            </h4>
+                            <div style="float: left;">
+                              <a href="#" class="btn btn-warning-outline" ng-click="redirectToHighriseDeal()">Open in Highrise</a>
+
+                              <a href="#" class="btn btn-warning-outline" ng-click="redirectToTrelloCard()">Open in Trello</a>
+
+                              <a href="#" class="btn btn-warning-outline" ng-click="redirectClient3Importa()">Cerca in Google Gruppi</a>
+
+                              <a href="#" class="btn btn-warning-outline" ng-click="composeNewMail()">Scrivi mail</a>
+                            </div>
+                        </div>
+
+                       
+                        
+                    </div>
+
+                    <br><br>
+                      
+
+                        
+                    <div class="row">
+
+                        <div class="col-lg-6 col-lg-offset-3">
+                            <form class="text-center">
+                                
+                                <fieldset name="dealForm" class="form-group" style="text-align: left;">
+
+                                    <label class="text-inverse" for="exampleInputEmail1">Cantiere in: {{constructionSite}}</label>
+
+                                    <input id="pac-input" class="controls" type="text" placeholder="Enter a location" ng-disabled="!hrdeal.data.deal || hrValidationMsg">
+                                    
+                                    <div id="map"></div>
+
+                                    <!-- Google Place Search -->
+                                    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBVPu-pLvwF-wtd9weBxXuwCMgmbZ7reIU&signed_in=true&libraries=places&callback=initMap" async defer></script>
+
+                                    <script>
+                                        var map, autocomplete, infowindow, marker;
+                                        function initMap() {
+                                          map = new google.maps.Map(document.getElementById('map'), {
+                                            center: {lat: 46.2, lng: 11.4668131}, 
+                                            zoom: 6
+                                          });
+                                          var input = /** @type {!HTMLInputElement} */(
+                                          document.getElementById('pac-input'));
+
+                                          map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+                                          autocomplete = new google.maps.places.Autocomplete(input);
+                                          autocomplete.bindTo('bounds', map);
+
+                                          infowindow = new google.maps.InfoWindow();
+                                          marker = new google.maps.Marker({
+                                            map: map,
+                                            anchorPoint: new google.maps.Point(0, -29)
+                                          });
+
+
+                                          autocomplete.setTypes(['address']);
+                                          var scope = angular.element($("#pac-input")).scope();
+
+
+                                          autocomplete.addListener('place_changed', function() {
+                                            infowindow.close();
+                                            marker.setVisible(false);
+                                            var place = autocomplete.getPlace();
+                                            if (!place.geometry) {
+
+                                              scope.$apply(function(){
+                                                  scope.constructionSite = address;
+                                                  scope.constructionSitePlaceId = place.place_id;
+                                              });
+                                              //window.alert("Autocomplete's returned place contains no geometry");
+                                              return;
+                                            }
+
+                                            // If the place has a geometry, then present it on a map.
+                                            if (place.geometry.viewport) {
+                                              map.fitBounds(place.geometry.viewport);
+                                            } else {
+                                              map.setCenter(place.geometry.location);
+                                              map.setZoom(17);  // Why 17? Because it looks good.
+                                            }
+                                            marker.setIcon(({
+                                              url: place.icon,
+                                              size: new google.maps.Size(71, 71),
+                                              origin: new google.maps.Point(0, 0),
+                                              anchor: new google.maps.Point(17, 34),
+                                              scaledSize: new google.maps.Size(35, 35)
+                                            }));
+                                            marker.setPosition(place.geometry.location);
+                                            marker.setVisible(true);
+
+                                            var address = '';
+                                            if (place.address_components) {
+                                              address = [
+                                                (place.address_components[0] && place.address_components[0].short_name || ''),
+                                                (place.address_components[1] && place.address_components[1].short_name || ''),
+                                                //(place.address_components[2] && place.address_components[2].short_name || '')
+                                              ].join(', ');
+                                            }
+
+                                            infowindow.setContent('<div><strong>' + address + '</strong></div>');
+                                            infowindow.open(map, marker);
+
+                                            //document.getElementById('constructionSite').value = address;
+                                            //angular.scope().setAddress(address);
+                                            //var scope = angular.element($("#pac-input")).scope();
+                                            scope.$apply(function(){
+                                                scope.constructionSite = address;
+                                                scope.constructionSitePlaceId = place.place_id;
+                                            });
+                                          });
+                                        }
+
+                                    </script>
+                                
+                                </fieldset>                                
 
 
 
-<div class="container" >
-  
-  
-  <section id="loginbuttons" ng-hide="gdriveLoggedin">
-    <h4>Per cominciare collegati a Google Drive utilizzando il pulsante nella barra di navigazione</h4>
-  </section>
-  <section id="crmform" ng-show="gdriveLoggedin">
+                                <fieldset class="form-group text-inverse" style="text-align: left;">
+                                    <label for="jobDescription">Descrizione lavoro</label>
+                                    <input type="text" class="form-control" id="jobDescription" ng-model="jobDescription"  ng-disabled="!hrdeal.data.deal || hrValidationMsg" placeholder="Es. Copertura, Pavimentazione in teack, Facciata">
+                                </fieldset>
+                                <fieldset class="form-group m-y-md text-inverse" style="text-align: left;">
+                                    <label for="dealManager">Responsabile</label>
+                                    <div style="text-align: left;" 
+                                         id="dealManager" 
+                                         ng-dropdown-multiselect="" 
+                                         options="managerOptions" 
+                                         selected-model="managerModel" 
+                                         extra-settings="managerSettings" >
+                                    </div>
+                                </fieldset>
+                                <fieldset class="form-group text-inverse" style="text-align: left;">
+                                    <label for="jobType">Categoria Lavoro</label>
+                                    <div style="text-align: left;" 
+                                         id="jobType" 
+                                         ng-dropdown-multiselect="" 
+                                         options="jobTypeOptions" 
+                                         selected-model="jobTypeModel" 
+                                         extra-settings="jobTypeSettings" 
+                                         >
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                    </div>
+                    <a href="#" 
+                       ng-click="updateHRDeal()" 
+                       class="btn btn-lg btn-warning-outline"
+                       ng-disabled="!(hrdeal.data.deal.name  && jobDescription && constructionSite && jobTypeModel.id && managerModel.id )" >
+                        - Aggiorna nome deal Highrise&nbsp;<br>
+                        - Crea Card in Trello<br>
+                        &nbsp;- Crea Folder in GDrive&nbsp;<br>
+                        - Aggiunge link a card
+                    </a>
 
-    <div class="row">
+                    
 
-      
-      <div class="col-lg-12">
-        <form role="form">
-         
-          <fieldset class="form-group text-inverse">
-            <label for="hrdeal">Link Highrise</label>
-            <input type="text" class="form-control" id="hrdeal" ng-model="dealurl" placeholder="Paste link" required>
-          </fieldset>
 
-          <div class="col-lg-12">
-            <button type="button" class="btn btn-block btn-sm btn-warning m-y-lg" ng-disabled="!dealurl" ng-click="getHighRiseDeal()" >Verifica Link</button>
-          </div>
-
-        </form>
-      </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <br><br>
-
-     <div class="row" ng-show="hrValidationMsg">
-      <div class="col-lg-12">
-        <h4>Validation Result: {{hrValidationMsg}}</h4>
-      </div>
-    </div>
-     
-    <div class="row" ng-show="hrdeal.data.deal.name">
-     
-      <div class="col-lg-12">
-        <form class="m-y-lg text-left">
-          <fieldset class="form-group m-y-md text-inverse">
-            <label>Highrise Deal Name:</label>
-            <p>{{hrdeal.data.deal.name}}</p>
-          </fieldset>
-
-          <fieldset class="form-group m-y-md text-inverse">
-            <label>Trello:</label>
-            <p><a href="{{hrnote}}" target="_blank">{{hrnote}}</a></p>
-          </fieldset>
-
-          <fieldset class="form-group m-y-md text-inverse">
-            <label>Cartella Ordine Vendita:</label>
-            <p><a href="{{gdrivelink}}" target="_blank">{{gdrivelink}}</a></p>
-          </fieldset>
-
-          <fieldset class="form-group m-y-md text-inverse">
-            <label>Ordine Vendita:</label>
-            <p><a href="{{gdriveOrderLink}}" target="_blank">{{gdriveOrderLink}}</a></p>
-          </fieldset>
-
-          <fieldset class="form-group m-y-md text-inverse">
-            <label>Cliente:</label>
-            <p>{{hrdeal.data.deal.party.name}}</p>
-          </fieldset>
-          <fieldset class="form-group m-y-md text-inverse">
-            <label for="constructionSite">Cantiere in</label>
-            <input type="text" class="form-control" id="constructionSite" ng-model="constructionSite" placeholder="Comune o Comune e via">
-          </fieldset>
-          <fieldset class="form-group m-y-md text-inverse">
-            <label for="jobDescription">Descrizione lavoro</label>
-            <input type="text" class="form-control" id="jobDescription" ng-model="jobDescription" placeholder="Es. Copertura, Pavimentazione in teack, Facciata">
-          </fieldset>
-
-          <fieldset>
-            <label for="jobType">Responsabile</label>
-            
-            <div style="text-align: left;" 
-                 id="dealManager" 
-                 ng-dropdown-multiselect="" 
-                 options="managerOptions" 
-                 selected-model="managerModel" 
-                 extra-settings="managerSettings" 
-                 >
-            </div>  
-            
-          </fieldset>
-
-
-          <fieldset>
-            <label for="jobType">Categoria Lavoro</label>
-            
-            <div style="text-align: left;" 
-                 id="jobType" 
-                 ng-dropdown-multiselect="" 
-                 options="jobTypeOptions" 
-                 selected-model="jobTypeModel" 
-                 extra-settings="jobTypeSettings" 
-                 >
-            </div>  
-            
-          </fieldset>
-
-
-
-          <br>
-          <button type="submit"
-                  ng-disabled="!(hrdeal.data.deal.name && constructionSite && jobDescription && managerModel.id && jobTypeModel.id)" 
-                  class="btn btn-block btn-lg btn-success m-y-lg" 
-                  ng-click="updateHRDeal()">Aggiorna Deal</button>
-        </form>
-      </div>
-    </div>
-
-    <br><br>
-
-    <div class="row" ng-show="resultDealName">
-      <div class="col-lg-12">
-        <form class="m-y-lg text-left">
-          <fieldset class="form-group m-y-md text-inverse">
-            <label>Deal Aggiornato in: </label>
-            <label>{{resultDealName}}</label>
-          </fieldset>
-        </form>
-      </div>
-    </div>
-  </section>
-
-
-
-</div>
-
-<footer class="footer">
-  <div class="container">
-      <p>GCRM v0.1 | by
-        <a href="https://twitter.com/querior">@querior</a>
-      </p>
-  </div>
-</footer>

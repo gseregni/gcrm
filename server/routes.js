@@ -11,6 +11,7 @@ module.exports = function(app) {
 
   // Insert routes below
   app.use('/api/hrdealnotes', require('./api/hrdealnote'));
+  app.use('/api/hrdealcustomfields', require('./api/hrdealcustomfields'));
   app.use('/api/hrdealcategories', require('./api/hrdealcategory'));
   app.use('/api/drive', require('./api/drive'));
   app.use('/api/hrdeals', require('./api/hrdeal'));

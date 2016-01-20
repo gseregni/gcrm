@@ -26,4 +26,14 @@ angular.module('galimbertiCrmApp')
         method: 'PUT',
       }
     });
+  })
+  .factory('HighRiseCustomFields', function ($resource) {
+    return $resource('/api/hrdealcustomfields/:id', {
+      id: '@_id'
+    },
+    {
+      update: {
+        method: 'PUT',
+      }
+    });
   });
