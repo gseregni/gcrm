@@ -20,8 +20,8 @@ angular.module('galimbertiCrmApp', [
 
 
 
-  var clientId="246770070242-61imh7fej22jkonn8a58ppssbq7391b2.apps.googleusercontent.com";
-  var apiKey = "AIzaSyC9vVAApxr8-ury3bK2Y3NYIADMb5QykXs";
+  var clientId="465342850022-uccefd9aoqoqum18ctcvg9vai1no554a.apps.googleusercontent.com";
+  var apiKey = "AIzaSyAggTg6GPKQt710bFV4RiUfByLlKR1BGjg";
   var scopes ="https://www.googleapis.com/auth/drive";
   var accessToken;  
 
