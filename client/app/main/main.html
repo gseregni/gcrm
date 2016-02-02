@@ -168,6 +168,7 @@
 
                                             var address = '';
                                             if (place.address_components) {
+                                              console.log("Address components",place.address_components)
                                               address = [
                                                 (place.address_components[0] && place.address_components[0].short_name || ''),
                                                 (place.address_components[1] && place.address_components[1].short_name || ''),
@@ -183,6 +184,7 @@
                                             //var scope = angular.element($("#pac-input")).scope();
                                             scope.$apply(function(){
                                                 scope.constructionSite = address;
+                                                scope.cityName = place.address_components[1].short_name;
                                                 scope.constructionSitePlaceId = place.place_id;
                                             });
                                           });

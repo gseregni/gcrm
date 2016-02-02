@@ -25,6 +25,8 @@ angular.module('galimbertiCrmApp', [
   var scopes ="https://www.googleapis.com/auth/drive";
   var accessToken;  
 
+  var currentProfile;
+
       
   var init = function() {
     gapi.client.setApiKey(apiKey);
@@ -38,7 +40,10 @@ angular.module('galimbertiCrmApp', [
     //console.log("Access Token",accessToken)
   }
 
+
+
   function onSignIn(googleUser) {
+    currentProfile = googleUser;
     //console.log(googleUser);
     /*var profile = googleUser.getBasicProfile();
     
