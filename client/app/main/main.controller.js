@@ -134,13 +134,23 @@ angular.module('galimbertiCrmApp')
                                           $scope.hrnote = notes.data.notes.note.body;
 
                                           var customFields = $scope.hrnote.split("\n");
-
-                                          $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
-                                          $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
-                                          $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
-                                          $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
-                                          $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
-                                          $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+                                          if(customFields.length){
+                                              for(var i=0; i < customFields.length; i++){
+                                                if(customFields[i].length && customFields[i].indexOf("CantierePlaceId: ") != -1)
+                                                  $scope.constructionSitePlaceId = customFields[i].substring("CantierePlaceId: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Cantiere: ") != -1)
+                                                  $scope.constructionSite = customFields[i].substring("Cantiere: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Descrizione: ") != -1)
+                                                  $scope.jobDescription = customFields[i].substring("Descrizione: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link GDrive: ") != -1)
+                                                  $scope.gdrivelink = customFields[i].substring("Link GDrive: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Gsheet: ") != -1)
+                                                  $scope.gsheetlink = customFields[i].substring("Link Gsheet: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Trello: ") != -1)
+                                                  $scope.trelloLink = customFields[i].substring("Link Trello: ".length,customFields[i].length)
+                                              }
+                                          }
+                                          
 
                                           $scope.setPositionMarker();
                                         }
@@ -152,7 +162,6 @@ angular.module('galimbertiCrmApp')
                                               // get grive folder from Trello
                                               Trello.get("/cards/" + cardId)
                                                     .then(function(card){
-                                                      console.log("Card ", card);
                                                       if(card.desc){
                                                         var ordineVendita = "**Cartella Ordine Vendita**";
                                                         var idxOrdineVendita = card.desc.indexOf(ordineVendita);
@@ -257,13 +266,24 @@ angular.module('galimbertiCrmApp')
                                           $scope.hrnote = notes.data.notes.note.body;
 
                                           var customFields = $scope.hrnote.split("\n");
+                                          if(customFields.length){
+                                              for(var i=0; i < customFields.length; i++){
+                                                if(customFields[i].length && customFields[i].indexOf("CantierePlaceId: ") != -1)
+                                                  $scope.constructionSitePlaceId = customFields[i].substring("CantierePlaceId: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Cantiere: ") != -1)
+                                                  $scope.constructionSite = customFields[i].substring("Cantiere: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Descrizione: ") != -1)
+                                                  $scope.jobDescription = customFields[i].substring("Descrizione: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link GDrive: ") != -1)
+                                                  $scope.gdrivelink = customFields[i].substring("Link GDrive: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Gsheet: ") != -1)
+                                                  $scope.gsheetlink = customFields[i].substring("Link Gsheet: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Trello: ") != -1)
+                                                  $scope.trelloLink = customFields[i].substring("Link Trello: ".length,customFields[i].length)
+                                              }
+                                          }
 
-                                          $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
-                                          $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
-                                          $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
-                                          $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
-                                          $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
-                                          $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+                                          
 
                                           $scope.setPositionMarker();
                                         }
@@ -496,14 +516,23 @@ angular.module('galimbertiCrmApp')
                                             $scope.hrnote = notes.data.notes.note.body;
 
                                             var customFields = $scope.hrnote.split("\n");
-
-                                            $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
-                                            $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
-                                            $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
-                                            $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
-                                            $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
-                                            $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
-
+                                            if(customFields.length){
+                                              for(var i=0; i < customFields.length; i++){
+                                                if(customFields[i].length && customFields[i].indexOf("CantierePlaceId: ") != -1)
+                                                  $scope.constructionSitePlaceId = customFields[i].substring("CantierePlaceId: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Cantiere: ") != -1)
+                                                  $scope.constructionSite = customFields[i].substring("Cantiere: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Descrizione: ") != -1)
+                                                  $scope.jobDescription = customFields[i].substring("Descrizione: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link GDrive: ") != -1)
+                                                  $scope.gdrivelink = customFields[i].substring("Link GDrive: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Gsheet: ") != -1)
+                                                  $scope.gsheetlink = customFields[i].substring("Link Gsheet: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Trello: ") != -1)
+                                                  $scope.trelloLink = customFields[i].substring("Link Trello: ".length,customFields[i].length)
+                                              }
+                                            }
+                                            
                                             $scope.setPositionMarker();
                                           }
                                         });
@@ -1256,13 +1285,19 @@ angular.module('galimbertiCrmApp')
                                                             $scope.hrnote = notes.data.notes.note.body;
 
                                                             var customFields = $scope.hrnote.split("\n");
+                                                            if(customFields.length){
+                                                                for(var i=0; i < customFields.length; i++){
+                                                                  if(customFields[i].length && customFields[i].indexOf("Link GDrive: ") != -1)
+                                                                    $scope.gdrivelink = customFields[i].substring("Link GDrive: ".length,customFields[i].length);
+                                                                  else if(customFields[i].length && customFields[i].indexOf("Link Gsheet: ") != -1)
+                                                                    $scope.gsheetlink = customFields[i].substring("Link Gsheet: ".length,customFields[i].length);
+                                                                  
+                                                                }
+                                                            }
 
-                                                            //$scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
-                                                            //$scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
-                                                            //$scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
-                                                            $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
-                                                            $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
-                                                            //$scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+
+                                                            //$scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
+                                                            //$scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
 
                                                             // Update HighriseNotes
                                                             updateHRNotes(dealId,false)
@@ -1445,7 +1480,6 @@ angular.module('galimbertiCrmApp')
 
 
       $scope.setPositionMarker = function(){
-
         if($scope.constructionSitePlaceId){
           var geocoder = new google.maps.Geocoder;
           geocoder.geocode({'placeId': $scope.constructionSitePlaceId}, function(results, status) {
@@ -1491,8 +1525,12 @@ angular.module('galimbertiCrmApp')
                                             $scope.hrnote = notes.data.notes.note.body;
 
                                             var customFields = $scope.hrnote.split("\n");
-
-                                            $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
+                                            if(customFields.length){
+                                              for(var i=0; i < customFields.length; i++){
+                                                if(customFields[i].length && customFields[i].indexOf("Link Trello: ") != -1)
+                                                  $scope.trelloLink = customFields[i].substring("Link Trello: ".length,customFields[i].length)
+                                              }
+                                            }
 
                                             if($scope.trelloLink)
                                               $window.open($scope.trelloLink, '_blank');
@@ -1504,10 +1542,41 @@ angular.module('galimbertiCrmApp')
       };
       
       $scope.redirectClient3Importa = function(){
-        // $scope.hrdeal.data.deal.id['$t']
-        if($scope.hrdeal && $scope.hrdeal.data.deal.id['$t']){
-          var trelloSearch = "https$2F$2Ftrello.com$2Fc$2F"  + $scope.shortTrelloLink.substring("https://trello.com/c/".length,$scope.shortTrelloLink.length);
-          $window.open('https://groups.google.com/a/galimberti.eu/forum/#!searchin/clienti3importa/' + trelloSearch, '_blank');
+        var token = $scope.dealCountry === "Svizzera" ?  $scope.hrtokenSwi : ($scope.dealCountry === "Italia" ? $scope.hrtokenIta : null);
+        var url = $scope.dealCountry === "Svizzera" ?  swiHighriseUrl : ($scope.dealCountry === "Italia" ? itaHighriseUrl : null);
+
+
+        if($scope.hrdeal && $scope.hrdeal.data.deal.id['$t'] && token && url){
+          HighRiseNotes.get({dealurl: url + "/" + $scope.hrdeal.data.deal.id['$t'] + "/notes", token: token},
+                                       function(notes){
+                                          //console.log("Notes",notes)
+                                          if(notes.data.notes && notes.data.notes.note){
+                                            $scope.hrnote = notes.data.notes.note.body;
+
+                                            var customFields = $scope.hrnote.split("\n");
+                                            if(customFields.length){
+                                              for(var i=0; i < customFields.length; i++){
+                                                if(customFields[i].length && customFields[i].indexOf("Link Trello: ") != -1)
+                                                  $scope.trelloLink = customFields[i].substring("Link Trello: ".length,customFields[i].length)
+                                              }
+                                            }
+
+                                            if($scope.trelloLink){
+                                              var trelloLnk = $scope.trelloLink.substring("https://trello.com/c/".length,$scope.trelloLink.length);
+                                              if(trelloLnk && trelloLnk.indexOf("/") != -1){
+                                                var idx = trelloLnk.indexOf("/") ;
+                                                var cardId = trelloLnk.substring(0,idx);
+                                                if(cardId){
+                                                  var trelloSearch = "https$2F$2Ftrello.com$2Fc$2F"  + cardId;
+                                                  $window.open('https://groups.google.com/a/galimberti.eu/forum/#!searchin/clienti3importa/' + trelloSearch, '_blank');
+                                                }
+                                              }
+                                            }
+                                          }
+                                        });
+
+
+          
         }
       };
 
@@ -1527,25 +1596,47 @@ angular.module('galimbertiCrmApp')
                                             $scope.hrnote = notes.data.notes.note.body;
 
                                             var customFields = $scope.hrnote.split("\n");
+                                            if(customFields.length){
+                                              for(var i=0; i < customFields.length; i++){
+                                                if(customFields[i].length && customFields[i].indexOf("CantierePlaceId: ") != -1)
+                                                  $scope.constructionSitePlaceId = customFields[i].substring("CantierePlaceId: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Cantiere: ") != -1)
+                                                  $scope.constructionSite = customFields[i].substring("Cantiere: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Descrizione: ") != -1)
+                                                  $scope.jobDescription = customFields[i].substring("Descrizione: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link GDrive: ") != -1)
+                                                  $scope.gdrivelink = customFields[i].substring("Link GDrive: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Gsheet: ") != -1)
+                                                  $scope.gsheetlink = customFields[i].substring("Link Gsheet: ".length,customFields[i].length);
+                                                else if(customFields[i].length && customFields[i].indexOf("Link Trello: ") != -1)
+                                                  $scope.trelloLink = customFields[i].substring("Link Trello: ".length,customFields[i].length)
+                                              }
+                                            }
 
-                                            $scope.constructionSitePlaceId = customFields[0] && customFields[0].indexOf("CantierePlaceId: ") != -1 ? customFields[0].substring("CantierePlaceId: ".length,customFields[0].length) : null;
-                                            $scope.constructionSite = customFields[1] && customFields[1].indexOf("Cantiere: ") != -1 ? customFields[1].substring("Cantiere: ".length,customFields[1].length) : null;
-                                            $scope.jobDescription = customFields[2] && customFields[2].indexOf("Descrizione: ") != -1 ? customFields[2].substring("Descrizione: ".length,customFields[2].length) : null;
-                                            $scope.gdrivelink = customFields[3] && customFields[3].indexOf("Link GDrive: ") != -1 ? customFields[3].substring("Link GDrive: ".length,customFields[3].length) : null;
-                                            $scope.gsheetlink = customFields[4] && customFields[4].indexOf("Link Gsheet: ") != -1 ? customFields[4].substring("Link Gsheet: ".length,customFields[4].length) : null;
-                                            $scope.trelloLink = customFields[5] && customFields[5].indexOf("Link Trello: ") != -1 ? customFields[5].substring("Link Trello: ".length,customFields[5].length) : null;
 
+
+                                            
                                             if($scope.trelloLink){
-                                              var tlink = "%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A" + $scope.shortTrelloLink
+                                              var trelloLnk = $scope.trelloLink.substring("https://trello.com/c/".length,$scope.trelloLink.length);
+                                              if(trelloLnk && trelloLnk.indexOf("/") != -1){
+                                                var idx = trelloLnk.indexOf("/") ;
+                                                var cardId = trelloLnk.substring(0,idx);
+                                                if(cardId){
+                                                  $scope.shortTrelloLink = "https://trello.com/c/" + cardId;
+                                                  var tlink = "%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A" + $scope.shortTrelloLink
+                                                  //$window.open("https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1&su=" + $scope.jobDescription + "&body=" + tlink + "&shva=1", '_blank');
+                                                  $window.open("https://mail.google.com/mail/?ui=2&view=cm&fs=1&tf=1&shva=1&su=" + $scope.jobDescription + "%20-%20" + tlink + "&compose=new",'Compose%20Gmail','status=no,directories=no,location=no,resizable=no,menubar=no,width=600,height=600,toolbar=no,signature=yes');
+                                                }
+                                              }
 
-                                              //$window.open("https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1&su=" + $scope.jobDescription + "&body=" + tlink + "&shva=1", '_blank');
-                                              $window.open("https://mail.google.com/mail/?ui=2&view=cm&fs=1&tf=1&shva=1&su=" + $scope.jobDescription + "%20-%20" + tlink + "&compose=new",'Compose%20Gmail','status=no,directories=no,location=no,resizable=no,menubar=no,width=600,height=600,toolbar=no,signature=yes');
+
+                                              
+
+                                             
 
                                             }
                                           }
                                         });
-
-        
       }
 
 
