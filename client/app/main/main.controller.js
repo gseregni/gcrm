@@ -175,11 +175,18 @@ angular.module('galimbertiCrmApp')
 
                                                         $scope.shortTrelloLink = card.shortUrl;
                                                         
-                                                        if(idxOrdineVendita != -1 && idxCalcoloPreventivo != -1)
+                                                        if(idxOrdineVendita != -1 && idxCalcoloPreventivo != -1){
                                                           $scope.gdrivelink = card.desc.substring(ordineVendita.length,idxCalcoloPreventivo);
+                                                          if($scope.gdrivelink)
+                                                            $scope.gdrivelink = $scope.gdrivelink.trim();
+                                                        }
 
-                                                        if(idxCalcoloPreventivo != -1 && idxDealHighrise != -1)
+                                                        if(idxCalcoloPreventivo != -1 && idxDealHighrise != -1){
                                                           $scope.gdriveOrderLink = card.desc.substring(idxCalcoloPreventivo + calcoloPreventivo.length,idxDealHighrise);
+                                                          if($scope.gdriveOrderLink)
+                                                            $scope.gdriveOrderLink = $scope.gdriveOrderLink.trim();
+
+                                                        }
 
 
                                                         $scope.$digest();
@@ -362,7 +369,7 @@ angular.module('galimbertiCrmApp')
             })
           
 
-          console.log("city name",$scope.cityName)
+          //console.log("city name",$scope.cityName)
           $scope.updDealName = customer + " - " +
               							   "Cantiere in " + $scope.cityName + " - " +
               							   $scope.jobDescription + " - " +
@@ -370,7 +377,7 @@ angular.module('galimbertiCrmApp')
               							   author + " - " +
               							   jobType;
 
-          console.log("Deal Name",$scope.updDealName)
+          //console.log("Deal Name",$scope.updDealName)
 
   				var token;
   				var country;
@@ -428,6 +435,7 @@ angular.module('galimbertiCrmApp')
       }
 
       var updateHRNotes = function(dealId,openHighrise){
+
         if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
                   HighRiseNotes.get({dealurl: swiHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenSwi},
                                     function(result){
@@ -732,7 +740,7 @@ angular.module('galimbertiCrmApp')
                                     }); 
 
           folderListReq.then(function(fresult){
-            console.log("Folder List",fresult);
+            //console.log("Folder List",fresult);
             if(fresult.result && fresult.result.items.length > 0){
               var gdriveItems = fresult.result.items;
               
@@ -791,6 +799,7 @@ angular.module('galimbertiCrmApp')
       }
 
       function moveOrCopyGoogleFolder(dealId,destinationFolder,title){
+        console.log("moveOrCopyGoogleFolder dealId,destinationFolder,title", dealId,destinationFolder,title)
         var currentYear = new Date().getFullYear();
         var previousYear = currentYear - 1;
 
@@ -1485,6 +1494,10 @@ angular.module('galimbertiCrmApp')
           geocoder.geocode({'placeId': $scope.constructionSitePlaceId}, function(results, status) {
             if (status === google.maps.GeocoderStatus.OK) {
               if(results[0]){
+                
+                if(results[0].address_components && results[0].address_components[1])
+                  $scope.cityName = results[0].address_components[1].short_name;
+
                 if(results[0].geometry.viewport) {
                   map.fitBounds(results[0].geometry.viewport);
                 } else {
