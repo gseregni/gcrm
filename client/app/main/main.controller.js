@@ -24,7 +24,7 @@ angular.module('galimbertiCrmApp')
   		$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  
 
   		var swiHighriseUrl = "https://swissgalimbertisa.highrisehq.com/deals",
-  			itaHighriseUrl = "https://galimbertisrl1.highrisehq.com/deals";
+  			  itaHighriseUrl = "https://galimbertisrl1.highrisehq.com/deals";
 
 
   		$scope.jobTypeModel = {};
@@ -56,62 +56,48 @@ angular.module('galimbertiCrmApp')
 
 
 		
+      var getCountryDeal = function(country,countryImg){
+        if(country !== "Svizzera" && country !== "Italia"){
+          console.log("Invalid country: Italia or Svizzera admitted")
+          $scope.hrValidationMsg = "Invalid country: Italia or Svizzera admitted";
+          return;
+        }
 
-          
-
-
-  		$scope.getHighRiseDeal = function(){
-
-        populateFolders();
-        
-  			$scope.hrtokenIta =  localStorageService.get("hrtokenIta");   
-  			$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  
-  			$scope.hrdeal = null;
-  			$scope.hrValidationMsg = null;
+        var hrToken = country === "Svizzera" ? $scope.hrtokenSwi : $scope.hrtokenIta;
+        var highriseUrl = country === "Svizzera" ? swiHighriseUrl : itaHighriseUrl;
 
 
-  			if(!$scope.dealurl || ($scope.dealurl.indexOf(swiHighriseUrl) == -1 && $scope.dealurl.indexOf(itaHighriseUrl) == -1)){
-  				$scope.hrValidationMsg = "Il link inserito non è un deal valido";
-  			}
-  			else if(!$scope.hrtokenIta && $scope.dealurl.indexOf(itaHighriseUrl) != -1)
-  				$scope.hrValidationMsg = "Non hai inserito il token Highrise per la società italiana";
-  			else if(!$scope.hrtokenSwi && $scope.dealurl.indexOf(swiHighriseUrl) != -1)
-  				$scope.hrValidationMsg = "Non hai inserito il token Highrise per la società svizzera";
-  			// valid path
-  			else if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
-          $scope.dealCountry = "Svizzera";
-          $scope.dealCountryImg = "SWI";
-          
+        $scope.dealCountry = country;
+        $scope.dealCountryImg = countryImg;
 
-          var dealurl = $scope.dealurl
+        var dealurl = $scope.dealurl
 
-          // init highrise note
-          $scope.hrnote = null;
-          // init gdrive link
-          $scope.gdrivelink = null;
-          $scope.gdriveOrderLink = null;
+        // init highrise note
+        $scope.hrnote = null;
+        // init gdrive link
+        $scope.gdrivelink = null;
+        $scope.gdriveOrderLink = null;
 
-  				if(dealurl.indexOf("/edit") != -1)
-            dealurl = dealurl.substring(0,dealurl.indexOf("/edit"));
+        if(dealurl.indexOf("/edit") != -1)
+          dealurl = dealurl.substring(0,dealurl.indexOf("/edit"));
 
-          HighRiseDeal.get({dealurl: dealurl, token: $scope.hrtokenSwi},function(deal){
-            //console.log("Highrise deal",deal)
-            $scope.hrdeal = deal;
+        HighRiseDeal.get({dealurl: dealurl, token: hrToken},function(deal){
+          //console.log("Highrise deal",deal)
+          $scope.hrdeal = deal;
 
-            if(deal.data.deal){
-              HighRisePeople.get({country: 'SWI', token: $scope.hrtokenSwi},function(people){
-                $scope.managerOptions = [];
-                if(people.users && people.users.user && people.users.user.length){
-                  var users = people.users.user;
-                  users.forEach(function(d){
-                    $scope.managerOptions.push({id: d.id['$t'] , label: d.name}) ;
-                  });
-                  $scope.managerModel.id = deal.data.deal['responsible-party-id']['$t'];
-                }
+          if(deal.data.deal){
+            HighRisePeople.get({country: countryImg, token: hrToken},function(people){
+              $scope.managerOptions = [];
+              if(people.users && people.users.user && people.users.user.length){
+                var users = people.users.user;
+                users.forEach(function(d){
+                  $scope.managerOptions.push({id: d.id['$t'] , label: d.name}) ;
+                });
+                $scope.managerModel.id = deal.data.deal['responsible-party-id']['$t'];
+              }
+            }); // end HighRisePeople.get
 
-                HighRiseDealCategory.get({country: 'SWI' , dealurl: dealurl, token: $scope.hrtokenSwi},function(cats){
-                  //console.log("Categories",cats);
-
+            HighRiseDealCategory.get({country: countryImg , dealurl: dealurl, token: hrToken},function(cats){
                   $scope.jobTypeOptions = [];
                   if(cats['deal-categories'] && cats['deal-categories']['deal-category'] && cats['deal-categories']['deal-category'].length){
                     var categories = cats['deal-categories']['deal-category'];
@@ -121,15 +107,12 @@ angular.module('galimbertiCrmApp')
                     $scope.jobTypeModel.id = deal.data.deal['category-id']['$t'];
                   }
 
-                });
+            });
 
-                //console.log("hrdeals",$scope.hrdeal);
-
-                if($scope.hrdeal.data){
-                  var dealId = $scope.hrdeal.data.deal.id['$t']
-                  HighRiseNotes.get({dealurl: swiHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenSwi},
-                                     function(notes){
-                                        //console.log("Notes",notes)
+            var dealId = $scope.hrdeal.data.deal.id['$t']
+            HighRiseNotes.get({dealurl: highriseUrl + "/" + dealId + "/notes", token: hrToken},
+                                    function(notes){
+                                      //console.log("Notes",notes)
                                         if(notes.data.notes && notes.data.notes.note){
                                           $scope.hrnote = notes.data.notes.note.body;
 
@@ -192,149 +175,42 @@ angular.module('galimbertiCrmApp')
                                                         $scope.$digest();
                                                       }
                                                     });
-                                            
-                                        }
-                                     });
-                    
-                      // TODO: create support request for additional info
-                      /*
-                      HighRiseCustomFields.get({dealurl: swiHighriseUrl + "/" + dealId + "/subject_datas", token: $scope.hrtokenSwi},
-                                                 function(subjectFields){
-                                                    console.log("Receive subject field",swiHighriseUrl + "/" + dealId + "/subject_datas",subjectFields)
-                                                 });
-                      */                                             
-                      
-                      $scope.hrValidationMsg = null;    
-                  }else{
-                    $scope.hrValidationMsg = "Deal invalido o non trovato";
-                    $scope.hrdeal = null;
-                  }
-                }); // end HighRisePeople.get
+                                        }  
 
-                
+                                    }); // end Highrise.getNotes
+          } // end if(deal.data.deal)
 
-            } else{
-              $scope.hrValidationMsg = "Deal invalido o non trovato";
-              $scope.hrdeal = null;
-            }
+        }); // end HighRiseDeal.get
 
 
-          });
+      }
           
+
+
+  		$scope.getHighRiseDeal = function(){
+
+        populateFolders();
+        
+  			$scope.hrtokenIta =  localStorageService.get("hrtokenIta");   
+  			$scope.hrtokenSwi  = localStorageService.get("hrtokenSwi");  
+  			$scope.hrdeal = null;
+  			$scope.hrValidationMsg = null;
+
+
+  			if(!$scope.dealurl || ($scope.dealurl.indexOf(swiHighriseUrl) == -1 && $scope.dealurl.indexOf(itaHighriseUrl) == -1)){
+  				$scope.hrValidationMsg = "Il link inserito non è un deal valido";
+  			}
+  			else if(!$scope.hrtokenIta && $scope.dealurl.indexOf(itaHighriseUrl) != -1)
+  				$scope.hrValidationMsg = "Non hai inserito il token Highrise per la società italiana";
+  			else if(!$scope.hrtokenSwi && $scope.dealurl.indexOf(swiHighriseUrl) != -1)
+  				$scope.hrValidationMsg = "Non hai inserito il token Highrise per la società svizzera";
+  			// valid path
+  			else if($scope.dealurl.indexOf(swiHighriseUrl) != -1){
+          getCountryDeal("Svizzera","SWI");
   			}
   			else if($scope.dealurl.indexOf(itaHighriseUrl) != -1){
-          var dealurl = $scope.dealurl
-          $scope.dealCountry = "Italia";
-          $scope.dealCountryImg = "ITA";
-          if(dealurl.indexOf("/edit") != -1)
-            dealurl = dealurl.substring(0,dealurl.indexOf("/edit"));
-
-  				
-          HighRiseDeal.get({dealurl: dealurl, token: $scope.hrtokenIta},function(deal){
-            $scope.hrdeal = deal;
-            if(!deal.data.deal){
-              $scope.hrValidationMsg = "Deal invalido o non trovato";
-              $scope.hrdeal = null;  
-              
-            } else
-              HighRisePeople.get({country: 'ITA', token: $scope.hrtokenIta},function(people){
-                $scope.managerOptions = [];
-                if(people.users && people.users.user && people.users.user.length){
-                  var users = people.users.user;
-                  users.forEach(function(d){
-                    $scope.managerOptions.push({id: d.id['$t'] , label: d.name}) ;
-                  });
-                  $scope.managerModel.id = deal.data.deal['responsible-party-id']['$t'];
-                }
-
-                HighRiseDealCategory.get({country: 'ITA' , dealurl: dealurl, token: $scope.hrtokenIta},function(cats){
-                  //console.log("Categories",cats);
-
-                  $scope.jobTypeOptions = [];
-                  if(cats['deal-categories'] && cats['deal-categories']['deal-category'] && cats['deal-categories']['deal-category'].length){
-                    var categories = cats['deal-categories']['deal-category'];
-                    categories.forEach(function(d){
-                      $scope.jobTypeOptions.push({id: d.id['$t'] , label: d.name}) ;
-                    });
-                    $scope.jobTypeModel.id = deal.data.deal['category-id']['$t'];
-                  }
-
-                });
-
-                //console.log("hrdeals",$scope.hrdeal);
-
-                if($scope.hrdeal.data.deal){
-                  var dealId = $scope.hrdeal.data.deal.id['$t']
-                  HighRiseNotes.get({dealurl: itaHighriseUrl + "/" + dealId + "/notes", token: $scope.hrtokenIta},
-                                     function(notes){
-                                        
-                                        //console.log("Notes",notes)
-                                        if(notes.data.notes && notes.data.notes.note){
-                                          $scope.hrnote = notes.data.notes.note.body;
-
-                                          var customFields = $scope.hrnote.split("\n");
-                                          if(customFields.length){
-                                              for(var i=0; i < customFields.length; i++){
-                                                if(customFields[i].length && customFields[i].indexOf("CantierePlaceId: ") != -1)
-                                                  $scope.constructionSitePlaceId = customFields[i].substring("CantierePlaceId: ".length,customFields[i].length);
-                                                else if(customFields[i].length && customFields[i].indexOf("Cantiere: ") != -1)
-                                                  $scope.constructionSite = customFields[i].substring("Cantiere: ".length,customFields[i].length);
-                                                else if(customFields[i].length && customFields[i].indexOf("Descrizione: ") != -1)
-                                                  $scope.jobDescription = customFields[i].substring("Descrizione: ".length,customFields[i].length);
-                                                else if(customFields[i].length && customFields[i].indexOf("Link GDrive: ") != -1)
-                                                  $scope.gdrivelink = customFields[i].substring("Link GDrive: ".length,customFields[i].length);
-                                                else if(customFields[i].length && customFields[i].indexOf("Link Gsheet: ") != -1)
-                                                  $scope.gsheetlink = customFields[i].substring("Link Gsheet: ".length,customFields[i].length);
-                                                else if(customFields[i].length && customFields[i].indexOf("Link Trello: ") != -1)
-                                                  $scope.trelloLink = customFields[i].substring("Link Trello: ".length,customFields[i].length)
-                                              }
-                                          }
-
-                                          
-
-                                          $scope.setPositionMarker();
-                                        }
-
-                                          var baseTrelloLink = "https://trello.com/c/";
-                                          if($scope.trelloLink && $scope.trelloLink.length >= baseTrelloLink.length + 8){
-                                            var cardId = $scope.trelloLink.substring(baseTrelloLink.length,baseTrelloLink.length + 8)
-                                            
-                                            if(cardId)
-                                              // get grive folder from Trello
-                                              Trello.get("/cards/" + cardId)
-                                                    .then(function(card){
-                                                      //console.log("Card ", card);
-                                                      if(card.desc){
-                                                        var ordineVendita = "**Cartella Ordine Vendita**";
-                                                        var idxOrdineVendita = card.desc.indexOf(ordineVendita);
-
-                                                        var calcoloPreventivo = "**Calcolo Preventivo e Contratto**"
-                                                        var idxCalcoloPreventivo = card.desc.indexOf(calcoloPreventivo);
-
-                                                        var dealHighrise = "**Deal Highrise**"
-                                                        var idxDealHighrise = card.desc.indexOf(dealHighrise);
-
-                                                        $scope.shortTrelloLink = card.shortUrl;
-                                                        
-                                                        if(idxOrdineVendita != -1 && idxCalcoloPreventivo != -1)
-                                                          $scope.gdrivelink = card.desc.substring(ordineVendita.length,idxCalcoloPreventivo);
-
-                                                        if(idxCalcoloPreventivo != -1 && idxDealHighrise != -1)
-                                                          $scope.gdriveOrderLink = card.desc.substring(idxCalcoloPreventivo + calcoloPreventivo.length,idxDealHighrise);
-
-                                                        $scope.$digest();
-                                                      }
-                                                    },function(err){
-                                                      console.log("Trello err get card",err)
-                                                    });
-                                          }
-
-                                     });
-                }
-
-                
-              })
-            });
+          getCountryDeal("Italia","ITA");
+          
   			}
   		}
 
@@ -955,9 +831,9 @@ angular.module('galimbertiCrmApp')
 
                                             //console.log("Folder Created",result);
                                             if(result.code == 403){
-                                              $timeout(function(){
+                                              //$timeout(function(){
                                                         return createFolder(parentFolderId,title,folderId,parent);
-                                                      },200);
+                                              //        },200);
                                             }else{
                                               //console.log("Folder Created",result);
                                               return walkDirectoryAndCopy(folderId,parent,result.id);
@@ -1070,7 +946,34 @@ angular.module('galimbertiCrmApp')
       var listPreventiviDaFareId = tettiListPreventiviDaFareId; 
       var templateCardId = tettiBoardId;
 
-      //var templateCardId = "56054cdee8dfe86066e5f9d7";
+        
+
+      // ITA Boards
+      var itaTettiBoardId = "FZ7ojMAv";
+      var itaTettiListPreventiviDaFareId = "55881caf1a5446f4de06a101";
+      var itaTettiTemplateCardId = "56054cdee8dfe86066e5f9d7";
+
+      var itaCaseBoardId = "Ud8I2OJ0";
+      var itaCaseListPreventiviDaFareId = "55a5060a8e660ea86ae09bf2";
+      var itaCaseTemplateCardId = "560a80e753f6d2a58131810e";
+
+      var itaOutdooorBoardId = "iDrCmTUi";
+      var itaOutdooorListPreventiviDaFareId = "566944e6308c21d95df15f2c";
+      var itaOutdooorTemplateCardId = "55b1ed7f76834b6aa0787ddc";
+
+      var itaFloorBoardId = "DT5l3jTm";
+      var itaFloorListPreventiviDaFareId = "566961e75c22b545f24f8a01";
+      var itaFloorTemplateCardId = "566978a21924a87c9c420baf";
+
+
+
+      //var listEmptyCardId = "55881caf1a5446f4de06a100";
+      var listPreventiviDaFareId = tettiListPreventiviDaFareId; 
+      var templateCardId = tettiBoardId;
+
+
+
+
 
       
 
