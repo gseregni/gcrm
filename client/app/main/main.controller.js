@@ -658,10 +658,12 @@ angular.module('galimbertiCrmApp')
                 beginChar = "H";
               else if(customer.toUpperCase().charAt(0) == 'N' || customer.toUpperCase().charAt(0) == 'O')
                 beginChar = "N";
-               else if(customer.toUpperCase().charAt(0) == 'P' || customer.toUpperCase().charAt(0) == 'Q')
+              else if(customer.toUpperCase().charAt(0) == 'P' || customer.toUpperCase().charAt(0) == 'Q')
                 beginChar = "P";
               else if(customer.toUpperCase().charAt(0) == 'U' || customer.toUpperCase().charAt(0) == 'V' || customer.toUpperCase().charAt(0) == 'W' || customer.toUpperCase().charAt(0) == 'Y' || customer.toUpperCase().charAt(0) == 'Z')
                 beginChar = "U";
+              else
+                beginChar = customer.toUpperCase().charAt(0);
 
               
 
