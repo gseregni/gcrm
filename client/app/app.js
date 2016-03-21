@@ -22,7 +22,7 @@ angular.module('galimbertiCrmApp', [
 
   var clientId="465342850022-uccefd9aoqoqum18ctcvg9vai1no554a.apps.googleusercontent.com";
   var apiKey = "AIzaSyAggTg6GPKQt710bFV4RiUfByLlKR1BGjg";
-  var scopes ="https://www.googleapis.com/auth/drive";
+  var scopes = "https://www.googleapis.com/auth/drive";
   var accessToken;  
 
   var currentProfile;
@@ -32,12 +32,12 @@ angular.module('galimbertiCrmApp', [
     gapi.client.setApiKey(apiKey);
     gapi.client.load('drive', 'v2')
     //console.log("gapi loaded")
-    gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
+    gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
   }
 
   function handleAuthResult(authResult) {
     accessToken = authResult.access_token;
-    //console.log("Access Token",accessToken)
+    console.log("Access Token",accessToken,authResult)
   }
 
 

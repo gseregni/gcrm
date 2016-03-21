@@ -487,7 +487,10 @@ angular.module('galimbertiCrmApp')
         var currentYear = new Date().getFullYear();
         var previousYear = currentYear - 1;
 
+        
 
+       
+        
         var request = gapi.client.request({
                                               'path': '/drive/v2/files',
                                               'method': 'GET',
@@ -497,7 +500,7 @@ angular.module('galimbertiCrmApp')
 
                                                }
                                           });
-
+        
         request.then(function(resp){
           
           if(resp.result.items && resp.result.items.length){
@@ -543,7 +546,7 @@ angular.module('galimbertiCrmApp')
 
         });
 
-
+        
 
       }
 
