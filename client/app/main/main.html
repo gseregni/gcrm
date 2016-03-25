@@ -2,8 +2,11 @@
     <script src="https://apis.google.com/js/platform.js" async defer></script>
 
     <div class="p-y-lg section section-fill-height section-opaque-dark">
-        <div class="background-image" style="background-image : url('assets/images/corteccia.jpg')"></div>
+      
+        <div class="background-image" style="background-image : url('assets/images/corteccia.jpg'); z-index: 0;"></div>
+      
         <div class="container">
+          
             <div class="row">
                 <div class="col-md-12">
                     <h1 class="text-center text-muted">Automazione CRM - Galimberti</h1>
@@ -222,16 +225,22 @@
                             </form>
                         </div>
                     </div>
+
+
                     <a href="#" 
                        ng-click="updateHRDeal()" 
                        class="btn btn-lg btn-warning-outline"
-                       ng-disabled="!(hrdeal.data.deal.name  && jobDescription && constructionSite && jobTypeModel.id && managerModel.id )" >
-                        - Aggiorna nome deal Highrise&nbsp;<br>
-                        - Crea Card in Trello<br>
-                        &nbsp;- Crea Folder in GDrive&nbsp;<br>
-                        - Aggiunge link a card
+                       ng-disabled="!(hrdeal.data.deal.name  && jobDescription && constructionSite && jobTypeModel.id && managerModel.id )" 
+                       ng-hide="loading">
+                          - Aggiorna nome deal Highrise&nbsp;<br>
+                          - Crea Card in Trello<br>
+                          &nbsp;- Crea Folder in GDrive&nbsp;<br>
+                          - Aggiunge link a card
                     </a>
-
+                    
+                    <h4 ng-show="loading" class="btn btn-lg btn-warning-outline">Aggiornamento Deal in corso...<br><br>
+                      <img src="assets/images/loader.gif"  />
+                    </h4>
                     
 
 

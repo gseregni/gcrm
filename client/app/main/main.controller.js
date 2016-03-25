@@ -17,6 +17,12 @@ angular.module('galimbertiCrmApp')
                                     HighRiseDealCategory,
                                     HighRiseNotes,
                                     HighRiseCustomFields) {
+
+      // set loader to false
+      $scope.loading = false;
+     
+      
+
 	   
 
 
@@ -229,7 +235,7 @@ angular.module('galimbertiCrmApp')
       }
 
   		$scope.updateHRDeal = function(){
-        
+        $scope.loading = true;
   			if($scope.hrdeal){
           var customer = $scope.hrdeal.data.deal.party.name;
           var dealId = $scope.hrdeal.data.deal.id['$t'];
@@ -359,8 +365,10 @@ angular.module('galimbertiCrmApp')
                                                             },
                                         function(updatedNote){
                                           //reloadHRNotes(dealId,'SWI');
-                                          if(openHighrise)
+                                          if(openHighrise){
+                                            $scope.loading = false;
                                             $window.open( url + '/' + $scope.hrdeal.data.deal.id['$t'], '_blank');
+                                          }
                                         })
                                       }
                                     });
@@ -753,7 +761,7 @@ angular.module('galimbertiCrmApp')
                             'removeParents': removeParents.join()
                           });
                       updRequest.execute(function(upd) {
-                        //console.log('Updated gdrive folder with new title', upd);
+                        //console.log('Updated gdrive folder with new title', upd); 
                         $scope.redirectToHighriseDeal();
                       });
                       
@@ -761,7 +769,6 @@ angular.module('galimbertiCrmApp')
 
               }
               else{
-                //console.log("Don't move anything"); 
                 $scope.redirectToHighriseDeal();
               }
                  
@@ -903,9 +910,7 @@ angular.module('galimbertiCrmApp')
 
                                             //console.log("Folder Created",result);
                                             if(result.code == 403){
-                                              //$timeout(function(){
-                                                        return createFolder(parentFolderId,title,folderId,parent);
-                                              //        },200);
+                                              return createFolder(parentFolderId,title,folderId,parent);
                                             }else{
                                               //console.log("Folder Created",result);
                                               return walkDirectoryAndCopy(folderId,parent,result.id);
@@ -967,7 +972,7 @@ angular.module('galimbertiCrmApp')
                                                                                                   //console.log("Update Trello Link from file copy");
                                                                                                   updateTrelloLinks();
                                                                                                   updateHRNotes($scope.hrdeal.data.deal.id['$t'],true);
-                                                                                                  
+                                                                                                  $scope.loading = false;
                                                                                                 }
                                                                                               }
 
@@ -1083,7 +1088,8 @@ angular.module('galimbertiCrmApp')
                                                         //console.log("Update Trello Link from file copy");
                                                         updateTrelloLinks();
                                                         updateHRNotes($scope.hrdeal.data.deal.id['$t'],true);
-                                                        
+
+
                                                       }
                                                       // update trello card with link
                                                     }
@@ -1634,6 +1640,8 @@ angular.module('galimbertiCrmApp')
 
 
       $scope.redirectToHighriseDeal = function(){
+        $scope.loading = false;
+        $scope.$apply();
         if($scope.hrdeal && $scope.hrdeal.data.deal.id['$t']){
           var hrUrl;
           if($scope.dealCountry === "Italia")
