@@ -37,7 +37,7 @@ angular.module('galimbertiCrmApp', [
 
   function handleAuthResult(authResult) {
     accessToken = authResult.access_token;
-    console.log("Access Token",accessToken,authResult)
+    //console.log("Access Token",accessToken,authResult)
   }
 
 
