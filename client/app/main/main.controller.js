@@ -1585,6 +1585,7 @@ angular.module('galimbertiCrmApp')
           success:  authenticationSuccess,
           error:    authenticationFailure
         });
+      }
       $rootScope.authorizeTrello();
 
       
@@ -1600,6 +1601,7 @@ angular.module('galimbertiCrmApp')
           geocoder.geocode({'placeId': $scope.constructionSitePlaceId}, function(results, status) {
             if (status === google.maps.GeocoderStatus.OK) {
               if(results[0]){
+                
                 if(results[0].address_components){
                   $scope.cityName = null;
                   for(var i=0; i < results[0].address_components.length; i++){
