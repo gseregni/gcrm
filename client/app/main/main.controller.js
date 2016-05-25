@@ -1585,7 +1585,6 @@ angular.module('galimbertiCrmApp')
           success:  authenticationSuccess,
           error:    authenticationFailure
         });
-      }
       $rootScope.authorizeTrello();
 
       
@@ -1601,9 +1600,18 @@ angular.module('galimbertiCrmApp')
           geocoder.geocode({'placeId': $scope.constructionSitePlaceId}, function(results, status) {
             if (status === google.maps.GeocoderStatus.OK) {
               if(results[0]){
-                
-                if(results[0].address_components && results[0].address_components[1])
-                  $scope.cityName = results[0].address_components[1].short_name;
+                if(results[0].address_components){
+                  $scope.cityName = null;
+                  for(var i=0; i < results[0].address_components.length; i++){
+                    if(results[0].address_components[i].types[0] === "locality")
+                      $scope.cityName = results[0].address_components[i].short_name;
+                  }
+                  if(!$scope.cityName)
+                    for(var i=0; i < results[0].address_components.length; i++){
+                      if(results[0].address_components[i].types[0] === "administrative_area_level_3")
+                        $scope.cityName = results[0].address_components[i].short_name;
+                    }
+                }
 
                 if(results[0].geometry.viewport) {
                   map.fitBounds(results[0].geometry.viewport);
