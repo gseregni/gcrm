@@ -1181,19 +1181,19 @@ angular.module('galimbertiCrmApp')
 
       var tettiBoardId = "BNBe9zmb";
       var tettiListPreventiviDaFareId = "55881caf1a5446f4de06a101";
-      var tettiTemplateCardId = "56054cdee8dfe86066e5f9d7";
+      var tettiTemplateCardId = "OIGy4hDf";
 
       var caseBoardId = "Ud8I2OJ0";
       var caseListPreventiviDaFareId = "55a5060a8e660ea86ae09bf2";
-      var caseTemplateCardId = "560a80e753f6d2a58131810e";
+      var caseTemplateCardId = "yiqJ8aoZ";
 
       var outdooorBoardId = "iDrCmTUi";
       var outdooorListPreventiviDaFareId = "566944e6308c21d95df15f2c";
-      var outdooorTemplateCardId = "55b1ed7f76834b6aa0787ddc";
+      var outdooorTemplateCardId = "AJMcTqoP";
 
       var floorBoardId = "DT5l3jTm";
       var floorListPreventiviDaFareId = "566961e75c22b545f24f8a01";
-      var floorTemplateCardId = "566978a21924a87c9c420baf";
+      var floorTemplateCardId = "YsHeC14W";
 
       //var listEmptyCardId = "55881caf1a5446f4de06a100";
       var listPreventiviDaFareId = tettiListPreventiviDaFareId; 
@@ -1202,21 +1202,21 @@ angular.module('galimbertiCrmApp')
         
       
       // ITA Boards
-      var itaTettiBoardId = "FZ7ojMAv";
+      var itaTettiBoardId = "FZ7ojMAv"; // uYYPoWzA
       var itaTettiListPreventiviDaFareId = "52f3787566d34a102141fba0";
-      var itaTettiTemplateCardId = "B4tYbcSJ";
+      var itaTettiTemplateCardId = "uYYPoWzA";
 
       var itaCaseBoardId = "sfmw6bWf";
       var itaCaseListPreventiviDaFareId = "565f1c15aefe2e1ea3e322b3";
-      var itaCaseTemplateCardId = "brpgu6py";
+      var itaCaseTemplateCardId = "04EFOslo";
 
       var itaOutdooorBoardId = "ubYTqRNo";
       var itaOutdooorListPreventiviDaFareId = "54ad1493f2846888caafe1e9";
-      var itaOutdooorTemplateCardId = "I6J4CzJ8";
+      var itaOutdooorTemplateCardId = "9XVRRFPB";
 
       var itaFloorBoardId = "pDgBnQlt";
       var itaFloorListPreventiviDaFareId = "56b8a64520a6da342e99ad27";
-      var itaFloorTemplateCardId = "D6opQIoi";
+      var itaFloorTemplateCardId = "I0KLjlbP";
 
 
 

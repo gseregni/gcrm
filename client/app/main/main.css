@@ -2,36 +2,8 @@ html {
     background: rgba(0, 0, 0, 0.7);
 }
 
-.thing-form {
-    margin: 20px 0;
-}
 
-#banner {
-    border-bottom: none;
-    margin-top: -20px;
-}
 
-#banner h1 {
-    font-size: 60px;
-    line-height: 1;
-    letter-spacing: -1px;
-}
-
-.hero-unit {
-    position: relative;
-    padding: 30px 15px;
-    color: #F5F5F5;
-    text-align: center;
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-    background: #034289;
-}
-
-.footer {
-    text-align: center;
-    padding: 30px 0;
-    margin-top: 70px;
-    border-top: 1px solid #E5E5E5;
-}
 
 .navbar-text {
     margin-left: 15px;
@@ -40,4 +12,34 @@ html {
 .abcRioButtonContentWrapper {
     background: rgba(0, 0, 0, 0.7);
     color: #F0AD4E;
+}
+
+.navbar {
+    max-height: 80px;
+    padding: 4px 8px 2px 8px !important;
+}
+
+.navbar-brand {
+    font-size: 14px;
+}
+
+.navbar-nav li > a,
+.navbar-header > a
+{
+    max-height: 50px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.p-y {
+    padding: 0px !important;
+}
+
+
+.m-y {
+    margin-bottom: 2px;
+}
+
+.btn-warning-outline {
+    font-size: 14px !important;
 }
